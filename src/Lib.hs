@@ -1,6 +1,10 @@
 module Lib
-    ( someFunc
-    ) where
+  ( Board,
+    move,
+  )
+where
 
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
+type Board = [[Int]]
+
+move :: Board -> Board
+move board = board
