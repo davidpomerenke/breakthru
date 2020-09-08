@@ -26,6 +26,7 @@ dependencies:
   - http-types
   - bytestring
   - aeson
+  - flow
 
 library:
   source-dirs: src

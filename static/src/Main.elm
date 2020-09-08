@@ -3,27 +3,22 @@ module Main exposing (..)
 import Browser
 import Element exposing (..)
 import Http
-import Json.Decode as D
-import Json.Encode as E
-
-
-type alias Model =
-    List (List Int)
+import Json exposing (decodeModel, encodeMove)
+import Model exposing (Model, Player(..))
 
 
 type Msg
-    = NoOp
-    | GotBoard (Result Http.Error Model)
+    = GotBoard (Result Http.Error Model)
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
     let
-        board =
-            [ [ 1, 2, 3 ] ]
+        init_ =
+            { player = Gold, lastPlayer = Nothing, gold = [], silver = [] }
     in
-    ( board
-    , getBoard board
+    ( init_
+    , getBoard init_
     )
 
 
@@ -36,10 +31,7 @@ update msg model =
                     ( a, Cmd.none )
 
                 Err _ ->
-                    ( [ [ 404 ] ], Cmd.none )
-
-        _ ->
-            ( model, Cmd.none )
+                    ( model, Cmd.none )
 
 
 main : Program () Model Msg
@@ -56,19 +48,15 @@ main =
 --
 
 
-getBoard board =
+getBoard move =
     Http.post
         { url = "/api"
-        , body = Http.jsonBody (E.list (E.list E.int) board)
-        , expect = Http.expectJson GotBoard (D.list (D.list D.int))
+        , body = Http.jsonBody (encodeMove move)
+        , expect = Http.expectJson GotBoard decodeModel
         }
 
 
 page : Model -> Element Msg
 page model =
     text
-        (model
-            |> List.map (List.map String.fromInt)
-            |> List.concat
-            |> String.concat
-        )
+        (model |> Debug.toString)

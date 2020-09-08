@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 74aad18f32ee15843b38faf01d4a1c8b362a63bc245ed2c82f0315a706949932
+-- hash: 32e74ef301c60e7c73aab74cd0facbcc4c1c5e462c1026e5eead974aee1507af
 
 name:           breakthru
 version:        0.1.0.0
@@ -36,6 +36,7 @@ library
       aeson
     , base >=4.7 && <5
     , bytestring
+    , flow
     , http-types
     , wai
     , warp
@@ -53,6 +54,7 @@ executable breakthru-exe
     , base >=4.7 && <5
     , breakthru
     , bytestring
+    , flow
     , http-types
     , wai
     , warp
@@ -71,6 +73,7 @@ test-suite breakthru-test
     , base >=4.7 && <5
     , breakthru
     , bytestring
+    , flow
     , http-types
     , wai
     , warp
