@@ -15,7 +15,11 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     let
         init_ =
-            { player = Gold, lastPlayer = Nothing, gold = [], silver = [] }
+            { lastPlayer = Nothing
+            , player = Gold
+            , gold = ( Just { x = 3, y = 3 }, [] )
+            , silver = []
+            }
     in
     ( init_
     , getBoard init_

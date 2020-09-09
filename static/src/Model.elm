@@ -15,6 +15,6 @@ type Player
 type alias Model =
     { lastPlayer : Maybe Player
     , player : Player
-    , gold : List Coordinate
+    , gold : ( Maybe Coordinate, List Coordinate )
     , silver : List Coordinate
     }

@@ -39,12 +39,19 @@ toPlayer p =
         D.fail "Invalid player name."
 
 
+decodeGold : D.Decoder ( Maybe Coordinate, List Coordinate )
+decodeGold =
+    D.map2 Tuple.pair
+        (D.index 0 (D.nullable decodeCoordinate))
+        (D.index 1 (D.list decodeCoordinate))
+
+
 decodeModel : D.Decoder Model
 decodeModel =
     D.succeed Model
         |> required "lastPlayer" (D.nullable D.string |> D.andThen toMaybePlayer)
         |> required "player" (D.string |> D.andThen toPlayer)
-        |> required "gold" (D.list decodeCoordinate)
+        |> required "gold" decodeGold
         |> required "silver" (D.list decodeCoordinate)
 
 
@@ -56,8 +63,8 @@ encodeCoordinate { x, y } =
         ]
 
 
-playerToString : Maybe Player -> E.Value
-playerToString player =
+encodePlayer : Maybe Player -> E.Value
+encodePlayer player =
     case player of
         Just Gold ->
             E.string "Gold"
@@ -69,11 +76,25 @@ playerToString player =
             E.null
 
 
+encodeFlagship : Maybe Coordinate -> E.Value
+encodeFlagship flagship =
+    case flagship of
+        Just coordinate ->
+            encodeCoordinate coordinate
+
+        Nothing ->
+            E.null
+
+
 encodeMove : Model -> E.Value
 encodeMove { lastPlayer, player, gold, silver } =
+    let
+        ( flagship, rest ) =
+            gold
+    in
     E.object
-        [ ( "lastPlayer", playerToString lastPlayer )
-        , ( "player", playerToString (Just player) )
-        , ( "gold", E.list encodeCoordinate gold )
+        [ ( "lastPlayer", encodePlayer lastPlayer )
+        , ( "player", encodePlayer (Just player) )
+        , ( "gold", E.list identity [ encodeFlagship flagship, E.list encodeCoordinate rest ] )
         , ( "silver", E.list encodeCoordinate silver )
         ]
