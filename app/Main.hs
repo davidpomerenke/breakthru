@@ -9,7 +9,15 @@ import Data.ByteString.Lazy (ByteString, append, fromStrict, pack)
 import Data.Function ((&))
 import Debug.Trace
 import Flow ((<|), (|>))
-import Game (Coordinate (..), Game (..), State, breakthru, move)
+import Game
+  ( Coordinate (..),
+    Game (..),
+    Player (..),
+    State,
+    Utility (..),
+    breakthru,
+    move,
+  )
 import Network.HTTP.Types (status200, status400)
 import Network.Wai
   ( Application,
@@ -35,7 +43,9 @@ main =
 -- * Provides an API representing the game AI, which is called by the static files after each move of the user.
 app :: Application
 app request respond =
-  let fail =
+  let Game {actions, utility} = breakthru
+
+      fail =
         responseLBS
           status400
           [("Content-Type", "text/plain")]
@@ -48,13 +58,35 @@ app request respond =
             -- API
 
             "POST"
-              | rawPathInfo request == "/move" ->
+              | rawPathInfo request == "/actions" ->
                 case decode $ fromStrict body of
-                  Just (action, state) ->
+                  Just state ->
+                    responseLBS
+                      status200
+                      [("Content-Type", "text/plain")]
+                      ( state |> actions |> encode
+                      )
+                  Nothing -> fail
+              | rawPathInfo request == "/result" ->
+                case decode $ fromStrict body of
+                  Just (state, action) ->
                     responseLBS
                       status200
                       [("Content-Type", "text/plain")]
                       (Game.move state action |> encode)
+                  _ -> fail
+              | rawPathInfo request == "/utility" ->
+                case decode $ fromStrict body of
+                  Just state ->
+                    responseLBS
+                      status200
+                      [("Content-Type", "text/plain")]
+                      ( ( case utility state of
+                            Nothing -> 0
+                            Just f -> let Utility u = f Gold in u
+                        )
+                          |> encode
+                      )
                   _ -> fail
               | rawPathInfo request == "/ai-move" ->
                 case decode $ fromStrict body of
@@ -64,16 +96,6 @@ app request respond =
                       [("Content-Type", "text/plain")]
                       (Ai.move state |> encode)
                   _ -> fail
-              | rawPathInfo request == "/actions" ->
-                case decode $ fromStrict body of
-                  Just state ->
-                    responseLBS
-                      status200
-                      [("Content-Type", "text/plain")]
-                      ( let Game {actions} = breakthru
-                         in state |> actions |> encode
-                      )
-                  Nothing -> fail
               | otherwise -> fail
             -- MAIN PAGE
             "GET" ->

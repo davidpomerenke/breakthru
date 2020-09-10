@@ -7,6 +7,7 @@ module Game
     State (..),
     Coordinate (..),
     Player (..),
+    Utility (..),
     breakthru,
     move,
   )
@@ -85,12 +86,16 @@ initial_ =
 
 actions_ :: State -> [Action]
 actions_ (state@State {player}) =
-  fleetOfPlayer player state
-    |> concatMap
-      ( \pos ->
-          moves pos state
-            |> map (\move -> (pos, move))
-      )
+  case utility_ state of
+    Nothing ->
+      fleetOfPlayer player state
+        |> concatMap
+          ( \pos ->
+              moves pos state
+                |> map (\move -> (pos, move))
+          )
+    Just _ ->
+      []
 
 -- | Moves from a specific origin given a game state.
 moves :: Coordinate -> State -> [Coordinate]
@@ -191,7 +196,7 @@ utility_ = \State {gold = (flagship, _)} ->
     Nothing ->
       Just
         ( \player -> case player of
-            Gold -> Utility 0
+            Gold -> Utility (-1)
             Silver -> Utility 1
         )
     Just Coordinate {x, y} ->
@@ -200,7 +205,7 @@ utility_ = \State {gold = (flagship, _)} ->
           Just
             ( \player -> case player of
                 Gold -> Utility 1
-                Silver -> Utility 0
+                Silver -> Utility (-1)
             )
         else Nothing
 

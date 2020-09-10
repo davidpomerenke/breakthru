@@ -58,6 +58,9 @@ decodeGold =
         (D.index 0 (D.nullable decodeCoordinate))
         (D.index 1 (D.list decodeCoordinate))
 
+decodeUtility : D.Decoder Float
+decodeUtility = D.float
+
 
 decodeModel : D.Decoder State
 decodeModel =
@@ -85,9 +88,9 @@ encodeMove ( a, b ) =
     E.list identity [ encodeCoordinate a, encodeCoordinate b ]
 
 
-encodeMoveAndState : ( ( Coordinate, Coordinate ), State ) -> E.Value
-encodeMoveAndState ( a, b ) =
-    E.list identity [ encodeMove a, encodeState b ]
+encodeStateAndMove : ( State, ( Coordinate, Coordinate ) ) -> E.Value
+encodeStateAndMove ( a, b ) =
+    E.list identity [ encodeState a, encodeMove b ]
 
 
 encodePlayer : Maybe Player -> E.Value

@@ -6,6 +6,7 @@ type alias Coordinate =
     , y : Int
     }
 
+type alias Action = (Coordinate, Coordinate)
 
 type Player
     = Gold
