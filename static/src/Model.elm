@@ -12,7 +12,7 @@ type Player
     | Silver
 
 
-type alias Model =
+type alias State =
     { lastPlayer : Maybe Player
     , player : Player
     , gold : ( Maybe Coordinate, List Coordinate )

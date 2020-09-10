@@ -4,15 +4,25 @@ import Browser
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
+import Element.Events as Events
 import Html exposing (Html)
-import Html.Attributes exposing (style)
+import Html.Attributes exposing (selected, style)
 import Http
-import Json exposing (decodeModel, encodeMove)
-import Model exposing (Model, Player(..))
+import Json exposing (decodeActions, decodeModel, encodeMoveAndState, encodeState)
+import Model exposing (Coordinate, Player(..), State)
+
+
+type alias Model =
+    { actions : List ( Coordinate, Coordinate )
+    , selectedShip : Maybe Coordinate
+    , game : State
+    }
 
 
 type Msg
-    = GotBoard (Result Http.Error Model)
+    = GotActions (Result Http.Error (List ( Coordinate, Coordinate )))
+    | GotBoard (Result Http.Error State)
+    | SelectShip (Maybe Coordinate)
 
 
 init : () -> ( Model, Cmd Msg )
@@ -61,22 +71,51 @@ init _ =
                 ]
             }
     in
-    ( init_
-    , Cmd.none
-      --getBoard init_
+    ( { actions = []
+      , selectedShip = Nothing
+      , game = init_
+      }
+    , getActions init_
     )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update msg ({ game } as model) =
     case msg of
-        GotBoard r ->
+        GotActions r ->
+            let
+                _ =
+                    Debug.log "actions" r
+            in
             case r of
                 Ok a ->
-                    ( a, Cmd.none )
+                    ( { model | actions = a }, Cmd.none )
 
                 Err _ ->
                     ( model, Cmd.none )
+
+        GotBoard r ->
+            case r of
+                Ok a ->
+                    ( { model | game = a, selectedShip = Nothing }, getActions a )
+
+                Err _ ->
+                    ( model, Cmd.none )
+
+        SelectShip ship ->
+            case model.selectedShip of
+                Nothing ->
+                    ( { model | selectedShip = ship }, Cmd.none )
+
+                Just start ->
+                    ( model
+                    , case ship of
+                        Just end ->
+                            getState ( start, end ) game
+
+                        Nothing ->
+                            Cmd.none
+                    )
 
 
 main : Program () Model Msg
@@ -97,17 +136,36 @@ main =
 --
 
 
-getBoard move =
+getActions state =
     Http.post
-        { url = "/api"
-        , body = Http.jsonBody (encodeMove move)
+        { url = "/actions"
+        , body = Http.jsonBody (encodeState state)
+        , expect = Http.expectJson GotActions decodeActions
+        }
+
+
+getState action state =
+    Http.post
+        { url = "/move"
+        , body = Http.jsonBody (encodeMoveAndState ( action, state ))
+        , expect = Http.expectJson GotBoard decodeModel
+        }
+
+
+getAiMove state =
+    Http.post
+        { url = "/ai-move"
+        , body = Http.jsonBody (encodeState state)
         , expect = Http.expectJson GotBoard decodeModel
         }
 
 
 page : Model -> Html Msg
-page { gold, silver } =
+page { game, actions, selectedShip } =
     let
+        { gold, silver } =
+            game
+
         ( flagship, rest ) =
             gold
     in
@@ -146,16 +204,44 @@ page { gold, silver } =
 
                                             silver_ =
                                                 List.member pos silver
+
+                                            clickable =
+                                                case selectedShip of
+                                                    Nothing ->
+                                                        actions
+                                                            |> List.map Tuple.first
+                                                            |> List.member { x = x, y = y }
+
+                                                    Just ship ->
+                                                        actions
+                                                            |> List.filter (\( s, _ ) -> s == ship)
+                                                            |> List.map Tuple.second
+                                                            |> List.member { x = x, y = y }
                                         in
                                         el
-                                            [ height fill
-                                            , width fill
-                                            , Border.color (rgb 0 0 0)
-                                            , Border.width 1
-                                            , Border.innerGlow (rgba 0.2 0.2 0.1 0.3) 20
-                                            , Background.color (rgb 0.7 0.6 0.4)
-                                            , padding 10
-                                            ]
+                                            ([ height fill
+                                             , width fill
+                                             , Border.color (rgb 0 0 0)
+                                             , Border.width 1
+                                             , Border.innerGlow (rgba 0.2 0.2 0.1 0.3) 20
+                                             , Background.color
+                                                (if clickable then
+                                                    rgb 0.2 0.6 0.4
+
+                                                 else
+                                                    rgb 0.7 0.6 0.4
+                                                )
+                                             , padding 10
+                                             ]
+                                                ++ (if clickable then
+                                                        [ Events.onClick (SelectShip (Just { x = x, y = y }))
+                                                        , pointer
+                                                        ]
+
+                                                    else
+                                                        [ Events.onClick (SelectShip Nothing) ]
+                                                   )
+                                            )
                                             (if flagship_ || gold_ || silver_ then
                                                 el
                                                     [ height (fillPortion 1)

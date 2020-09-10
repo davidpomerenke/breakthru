@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 32e74ef301c60e7c73aab74cd0facbcc4c1c5e462c1026e5eead974aee1507af
+-- hash: 162e0b6ef4d599d9bae750e9e1c5cc868ac91e96f33313179d0d7f4ade04cecf
 
 name:           breakthru
 version:        0.1.0.0
@@ -38,6 +38,7 @@ library
     , bytestring
     , flow
     , http-types
+    , open-browser
     , wai
     , warp
   default-language: Haskell2010
@@ -56,6 +57,7 @@ executable breakthru-exe
     , bytestring
     , flow
     , http-types
+    , open-browser
     , wai
     , warp
   default-language: Haskell2010
@@ -75,6 +77,7 @@ test-suite breakthru-test
     , bytestring
     , flow
     , http-types
+    , open-browser
     , wai
     , warp
   default-language: Haskell2010

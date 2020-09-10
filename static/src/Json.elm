@@ -5,7 +5,20 @@ module Json exposing (..)
 import Json.Decode as D
 import Json.Decode.Pipeline exposing (..)
 import Json.Encode as E
-import Model exposing (Coordinate, Model, Player(..))
+import Model exposing (Coordinate, Player(..), State)
+
+
+
+--DECODE
+
+
+decodeActions : D.Decoder (List ( Coordinate, Coordinate ))
+decodeActions =
+    D.list
+        (D.map2 Tuple.pair
+            (D.index 0 decodeCoordinate)
+            (D.index 1 decodeCoordinate)
+        )
 
 
 decodeCoordinate : D.Decoder Coordinate
@@ -46,13 +59,17 @@ decodeGold =
         (D.index 1 (D.list decodeCoordinate))
 
 
-decodeModel : D.Decoder Model
+decodeModel : D.Decoder State
 decodeModel =
-    D.succeed Model
+    D.succeed State
         |> required "lastPlayer" (D.nullable D.string |> D.andThen toMaybePlayer)
         |> required "player" (D.string |> D.andThen toPlayer)
         |> required "gold" decodeGold
         |> required "silver" (D.list decodeCoordinate)
+
+
+
+-- ENCODE
 
 
 encodeCoordinate : Coordinate -> E.Value
@@ -61,6 +78,16 @@ encodeCoordinate { x, y } =
         [ ( "x", E.int x )
         , ( "y", E.int y )
         ]
+
+
+encodeMove : ( Coordinate, Coordinate ) -> E.Value
+encodeMove ( a, b ) =
+    E.list identity [ encodeCoordinate a, encodeCoordinate b ]
+
+
+encodeMoveAndState : ( ( Coordinate, Coordinate ), State ) -> E.Value
+encodeMoveAndState ( a, b ) =
+    E.list identity [ encodeMove a, encodeState b ]
 
 
 encodePlayer : Maybe Player -> E.Value
@@ -86,8 +113,8 @@ encodeFlagship flagship =
             E.null
 
 
-encodeMove : Model -> E.Value
-encodeMove { lastPlayer, player, gold, silver } =
+encodeState : State -> E.Value
+encodeState { lastPlayer, player, gold, silver } =
     let
         ( flagship, rest ) =
             gold

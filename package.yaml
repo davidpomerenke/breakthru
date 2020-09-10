@@ -27,6 +27,7 @@ dependencies:
   - bytestring
   - aeson
   - flow
+  - open-browser
 
 library:
   source-dirs: src
