@@ -3,12 +3,13 @@
 
 module Main where
 
+import Ai (move)
 import Data.Aeson (FromJSON, ToJSON, decode, encode)
 import Data.ByteString.Lazy (ByteString, append, fromStrict, pack)
 import Data.Function ((&))
 import Debug.Trace
 import Flow ((<|), (|>))
-import Lib (Coordinate (..), Game (..), State, aiMove, breakthru, move)
+import Game (Coordinate (..), Game (..), State, breakthru, move)
 import Network.HTTP.Types (status200, status400)
 import Network.Wai
   ( Application,
@@ -53,7 +54,7 @@ app request respond =
                     responseLBS
                       status200
                       [("Content-Type", "text/plain")]
-                      (move state action |> encode)
+                      (Game.move state action |> encode)
                   _ -> fail
               | rawPathInfo request == "/ai-move" ->
                 case decode $ fromStrict body of
@@ -61,7 +62,7 @@ app request respond =
                     responseLBS
                       status200
                       [("Content-Type", "text/plain")]
-                      (state |> aiMove |> encode)
+                      (Ai.move state |> encode)
                   _ -> fail
               | rawPathInfo request == "/actions" ->
                 case decode $ fromStrict body of
@@ -69,8 +70,8 @@ app request respond =
                     responseLBS
                       status200
                       [("Content-Type", "text/plain")]
-                      ( let Game {action} = breakthru
-                         in state |> action |> encode
+                      ( let Game {actions} = breakthru
+                         in state |> actions |> encode
                       )
                   Nothing -> fail
               | otherwise -> fail
