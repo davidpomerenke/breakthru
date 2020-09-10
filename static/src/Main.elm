@@ -1,4 +1,4 @@
-module Main exposing (..)
+module Main exposing (main)
 
 import Browser
 import Element exposing (..)
@@ -11,10 +11,28 @@ import Html.Attributes exposing (style)
 import Http
 import Json exposing (decodeActions, decodeModel, decodeUtility, encodeState, encodeStateAndMove)
 import Model exposing (Action, Coordinate, Player(..), State)
+import Process
+import Task
+
+
+aiConfig : Player -> Maybe Ai
+aiConfig =
+    \player ->
+        case player of
+            Gold ->
+                Just Random
+
+            Silver ->
+                Just Random
+
+
+type Ai
+    = Random
 
 
 type alias Model =
-    { actions : List ( Coordinate, Coordinate )
+    { ai : Player -> Maybe Ai
+    , actions : List ( Coordinate, Coordinate )
     , selectedShip : Maybe Coordinate
     , winner : Maybe String
     , state : State
@@ -25,6 +43,7 @@ type Msg
     = GotActions (Result Http.Error (List ( Coordinate, Coordinate )))
     | GotBoard (Result Http.Error State)
     | GotUtility (Result Http.Error Float)
+    | WaitedForAiMove
     | SelectShip (Maybe Coordinate)
 
 
@@ -74,12 +93,18 @@ init _ =
                 ]
             }
     in
-    ( { actions = []
+    ( { ai = aiConfig
+      , actions = []
       , selectedShip = Nothing
       , winner = Nothing
       , state = init_
       }
-    , getActions init_
+    , case aiConfig init_.player of
+        Just ai ->
+            getAiMove ai init_
+
+        Nothing ->
+            getActions init_
     )
 
 
@@ -103,7 +128,9 @@ update msg ({ state } as model) =
         GotBoard r ->
             case r of
                 Ok a ->
-                    ( { model | state = a, selectedShip = Nothing }, getActions a )
+                    ( { model | state = a, selectedShip = Nothing }
+                    , getUtility state
+                    )
 
                 Err _ ->
                     ( model, Cmd.none )
@@ -122,7 +149,12 @@ update msg ({ state } as model) =
                             else
                                 Nothing
                       }
-                    , Cmd.none
+                    , case model.ai model.state.player of
+                        Just _ ->
+                            Process.sleep 1000 |> Task.perform (\_ -> WaitedForAiMove)
+
+                        Nothing ->
+                            getActions model.state
                     )
 
                 Err _ ->
@@ -134,14 +166,27 @@ update msg ({ state } as model) =
                     ( { model | selectedShip = ship }, Cmd.none )
 
                 Just start ->
-                    ( model
-                    , case ship of
+                    case ship of
                         Just end ->
-                            getResult state ( start, end )
+                            ( { model
+                                | selectedShip = Nothing
+                                , actions = []
+                              }
+                            , getResult state ( start, end )
+                            )
 
                         Nothing ->
-                            Cmd.none
-                    )
+                            ( { model | selectedShip = Nothing }, Cmd.none )
+
+        WaitedForAiMove ->
+            ( model
+            , case aiConfig model.state.player of
+                Just ai ->
+                    getAiMove ai model.state
+
+                Nothing ->
+                    Cmd.none
+            )
 
 
 main : Program () Model Msg
@@ -189,10 +234,15 @@ getUtility state =
         }
 
 
-getAiMove : State -> Cmd Msg
-getAiMove state =
+getAiMove : Ai -> State -> Cmd Msg
+getAiMove ai state =
     Http.post
-        { url = "/ai-move"
+        { url =
+            "/ai/"
+                ++ (case ai of
+                        Random ->
+                            "random"
+                   )
         , body = Http.jsonBody (encodeState state)
         , expect = Http.expectJson GotBoard decodeModel
         }
@@ -257,6 +307,7 @@ page model =
         )
 
 
+tile : Model -> Int -> Int -> Element Msg
 tile { actions, state, selectedShip } x y =
     let
         { gold, silver } =

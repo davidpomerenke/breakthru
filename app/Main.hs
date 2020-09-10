@@ -3,7 +3,7 @@
 
 module Main where
 
-import Ai (move)
+import Ai (move, random)
 import Data.Aeson (FromJSON, ToJSON, decode, encode)
 import Data.ByteString.Lazy (ByteString, append, fromStrict, pack)
 import Data.Function ((&))
@@ -27,6 +27,7 @@ import Network.Wai
     responseLBS,
   )
 import Network.Wai.Handler.Warp (run)
+import System.Random (mkStdGen)
 import Web.Browser (openBrowser)
 
 -- | Main function. Runs the server application.
@@ -88,13 +89,21 @@ app request respond =
                           |> encode
                       )
                   _ -> fail
-              | rawPathInfo request == "/ai-move" ->
+              | rawPathInfo request == "/ai/move" ->
                 case decode $ fromStrict body of
                   Just state ->
                     responseLBS
                       status200
                       [("Content-Type", "text/plain")]
                       (Ai.move state |> encode)
+                  _ -> fail
+              | rawPathInfo request == "/ai/random" ->
+                case decode $ fromStrict body of
+                  Just state ->
+                    responseLBS
+                      status200
+                      [("Content-Type", "text/plain")]
+                      (Ai.random (mkStdGen 137) state |> encode)
                   _ -> fail
               | otherwise -> fail
             -- MAIN PAGE

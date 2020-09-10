@@ -10,7 +10,7 @@ import Model exposing (Coordinate, Player(..), State)
 
 
 --DECODE
-
+ 
 
 decodeActions : D.Decoder (List ( Coordinate, Coordinate ))
 decodeActions =

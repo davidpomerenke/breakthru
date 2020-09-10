@@ -19,6 +19,7 @@ import Data.Maybe (fromMaybe)
 import Flow ((<|), (|>))
 import GHC.Generics (Generic)
 
+
 -- | Performs an action given a state.
 move :: State -> Action -> State
 move state action =

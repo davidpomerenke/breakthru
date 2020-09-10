@@ -28,6 +28,7 @@ dependencies:
   - aeson
   - flow
   - open-browser
+  - random >= 1.1 && < 2
 
 library:
   source-dirs: src
