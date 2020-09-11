@@ -4,7 +4,7 @@
 module Compete (compete) where
 
 import Ai (Ai (..), move, random)
-import Control.Parallel.Strategies
+import Control.Parallel.Strategies (parMap, rseq)
 import Data.Vector (fromList)
 import Flow ((|>))
 import GHC.Float (float2Double, int2Double)
@@ -20,20 +20,21 @@ compete =
       vLengths = lengths |> map int2Double |> fromList
    in do
         putStrLn
-          ( "Utility: "
+          ( "Utility  : "
               ++ (vUtilities |> mean |> show)
               ++ ("±" ++ (vUtilities |> stdDev |> show))
           )
         putStrLn
-          ( "Length : " ++ (vLengths |> mean |> printf "%.2f")
+          ( "Ply-depth: " ++ (vLengths |> mean |> printf "%.2f")
               ++ ("±" ++ (vLengths |> stdDev |> printf "%.2f"))
           )
 
 -- | Run multiple AIs against each other.
 competeOften :: ([Float], [Int])
 competeOften =
-  [1 .. 256]
-    |> parMap rseq
+  [1 .. 1024]
+    |> parMap
+      rseq
       ( \i ->
           play
             (mkStdGen i)
@@ -57,7 +58,7 @@ play g ai history state =
   let Game {initial, actions, result, utility} = breakthru
    in case utility state of
         Just f ->
-          (f (player state), reverse history)
+          (f Gold, reverse history)
         Nothing ->
           let (g1, g2) = split g
            in play g2 ai (state : history) (ai (player state) g1 state)

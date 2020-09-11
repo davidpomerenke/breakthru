@@ -32,8 +32,7 @@ data Game = Game
   { initial :: State,
     actions :: State -> [Action],
     result :: State -> Action -> Maybe State,
-    utility :: State -> Maybe (Player -> Utility),
-    heuristic :: State -> Player -> Utility
+    utility :: State -> Maybe (Player -> Utility)
   }
 
 -- | Type for the breakthru game state.
@@ -74,8 +73,7 @@ breakthru =
     { initial = initial_,
       actions = actions_,
       result = result_,
-      utility = utility_,
-      heuristic = \state player -> Utility 0
+      utility = utility_
     }
 
 -- todo
