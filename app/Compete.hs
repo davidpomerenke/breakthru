@@ -4,6 +4,7 @@
 module Compete (compete) where
 
 import Ai (Ai (..), move, random)
+import Control.Parallel.Strategies
 import Data.Vector (fromList)
 import Flow ((|>))
 import GHC.Float (float2Double, int2Double)
@@ -24,7 +25,7 @@ compete =
               ++ ("±" ++ (vUtilities |> stdDev |> show))
           )
         putStrLn
-          ( "Length : " ++ (vLengths |> mean  |> printf "%.2f")
+          ( "Length : " ++ (vLengths |> mean |> printf "%.2f")
               ++ ("±" ++ (vLengths |> stdDev |> printf "%.2f"))
           )
 
@@ -32,7 +33,7 @@ compete =
 competeOften :: ([Float], [Int])
 competeOften =
   [1 .. 256]
-    |> map
+    |> parMap rseq
       ( \i ->
           play
             (mkStdGen i)

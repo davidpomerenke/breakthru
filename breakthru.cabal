@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ba3dab384bce668e524f4730c9edd1561af48171bc1259b596c879bd07329b73
+-- hash: fdc3dc2796aaf7059809c065e8ad3d3a01bd8942e89450d35deaad8d2ffde997
 
 name:           breakthru
 version:        0.1.0.0
@@ -40,6 +40,7 @@ library
     , flow
     , http-types
     , open-browser
+    , parallel
     , random >=1.1 && <2
     , statistics
     , vector
@@ -54,7 +55,7 @@ executable breakthru-exe
       Paths_breakthru
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -eventlog
   build-depends:
       aeson
     , base >=4.7 && <5
@@ -63,6 +64,7 @@ executable breakthru-exe
     , flow
     , http-types
     , open-browser
+    , parallel
     , random >=1.1 && <2
     , statistics
     , vector
@@ -86,6 +88,7 @@ test-suite breakthru-test
     , flow
     , http-types
     , open-browser
+    , parallel
     , random >=1.1 && <2
     , statistics
     , vector
