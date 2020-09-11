@@ -4,6 +4,7 @@
 module Main where
 
 import Ai (move, random)
+import Compete (compete)
 import Data.Aeson (FromJSON, ToJSON, decode, encode)
 import Data.ByteString.Lazy (ByteString, append, fromStrict, pack)
 import Data.Function ((&))
@@ -30,9 +31,13 @@ import Network.Wai.Handler.Warp (run)
 import System.Random (mkStdGen)
 import Web.Browser (openBrowser)
 
--- | Main function. Runs the server application.
+-- | Main function.
 main :: IO ()
-main =
+main = compete
+
+-- | Runs the server application.
+serve :: IO ()
+serve =
   let url = "http://localhost:8000/"
    in do
         putStrLn url

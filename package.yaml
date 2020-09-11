@@ -29,6 +29,8 @@ dependencies:
   - flow
   - open-browser
   - random >= 1.1 && < 2
+  - statistics
+  - vector
 
 library:
   source-dirs: src

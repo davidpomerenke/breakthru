@@ -1,21 +1,23 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Ai (move, random) where
+module Ai (move, random, Ai (..)) where
 
 import Data.Maybe (fromMaybe)
 import Flow ((|>))
 import Game (Coordinate (..), Game (..), Player (..), State (..), breakthru)
 import System.Random (StdGen, mkStdGen, randomR)
 
+type Ai = State -> State
+
 -- | Move of the AI player.
-move :: State -> State
+move :: Ai
 move state =
   let Game {actions, result} = breakthru
    in case actions state of
         h : _ -> result state h |> fromMaybe state
         [] -> state
 
-random :: StdGen -> State -> State
+random :: StdGen -> Ai
 random g state =
   let Game {actions, result} = breakthru
       actions_ = actions state

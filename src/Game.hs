@@ -19,7 +19,6 @@ import Data.Maybe (fromMaybe)
 import Flow ((<|), (|>))
 import GHC.Generics (Generic)
 
-
 -- | Performs an action given a state.
 move :: State -> Action -> State
 move state action =
@@ -44,10 +43,13 @@ data State = State
     gold :: (Maybe Coordinate, [Coordinate]),
     silver :: [Coordinate]
   }
-  deriving (Show, Generic)
+  deriving (Eq, Show, Generic)
 
 -- | Breakthru player.
-data Player = Gold | Silver deriving (Eq, Show, Generic)
+data Player
+  = Gold
+  | Silver
+  deriving (Eq, Show, Generic)
 
 -- | Position of a ship.
 data Coordinate = Coordinate {x :: Int, y :: Int}
@@ -61,6 +63,7 @@ type Action = (Coordinate, Coordinate)
 
 -- | Utility of a player.
 data Utility = Utility Float
+  deriving (Eq, Show, Generic)
 
 -- BREAKTHRU SPECIFICATION
 
@@ -81,8 +84,46 @@ initial_ =
   State
     { lastPlayer = Nothing,
       player = Gold,
-      gold = (Just Coordinate {x = 5, y = 5}, []), -- todo
-      silver = [] -- todo
+      gold =
+        ( Just Coordinate {x = 5, y = 5},
+          [ (3, 4),
+            (3, 5),
+            (3, 6),
+            (7, 4),
+            (7, 5),
+            (7, 6),
+            (4, 3),
+            (5, 3),
+            (6, 3),
+            (4, 7),
+            (5, 7),
+            (6, 7)
+          ]
+            |> map (\(x, y) -> Coordinate {x, y})
+        ),
+      silver =
+        [ (1, 3),
+          (1, 4),
+          (1, 5),
+          (1, 6),
+          (1, 7),
+          (9, 3),
+          (9, 4),
+          (9, 5),
+          (9, 6),
+          (9, 7),
+          (3, 1),
+          (4, 1),
+          (5, 1),
+          (6, 1),
+          (7, 1),
+          (3, 9),
+          (4, 9),
+          (5, 9),
+          (6, 9),
+          (7, 9)
+        ]
+          |> map (\(x, y) -> Coordinate {x, y})
     }
 
 actions_ :: State -> [Action]
