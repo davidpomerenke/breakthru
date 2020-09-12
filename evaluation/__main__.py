@@ -6,17 +6,12 @@ sns.set_theme(style="white")
 
 try:
     long_data = pd.read_csv(
-        "results.csv",
-        names=["Gold",
-            "Silver",
-            "Utility",
-            "Utility (StdDev)",
-            "Ply-Depth",
-            "Ply-Depth (StdDev)"
-            ]
+        "results.csv"
     )
 
-    long_data["Utility+"] = long_data["Utility"].astype(str) + long_data["Utility (StdDev)"].astype(str)
+    print(long_data)
+
+    # long_data["Utility+"] = long_data["Utility"].astype(str) + long_data["Utility (StdDev)"].astype(str)
 
     # UTILITY
 
@@ -36,7 +31,7 @@ try:
         center=0,
         cmap="coolwarm",
         square=True,
-        annot=wide_data_utility
+        annot=True
     )
 
     plt.savefig("utility.png")

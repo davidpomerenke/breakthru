@@ -51,7 +51,7 @@ evaluate =
      let path = "evaluation/results.csv" in do
         ( writeFile
             path
-            ( "Gold,Silver,Utility,Utility (StdDev),Ply-Depth,Ply-Depth (StdDev)"
+            ( "Gold,Silver,Utility,Utility (StdDev),Ply-Depth,Ply-Depth (StdDev)\n"
                 ++ (unpack (encode (results)))
             )
           )
