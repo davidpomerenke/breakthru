@@ -1,14 +1,17 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Compete (compete) where
+module Compete where
 
-import Ai (Ai (..), move, random)
+import Ai
+import Control.Monad (join)
 import Control.Parallel.Strategies (parMap, rseq)
+import Data.Maybe (fromMaybe)
 import Data.Vector (fromList)
+import Debug.Trace
 import Flow ((|>))
 import GHC.Float (float2Double, int2Double)
-import Game (Game (..), Player (..), State (..), Utility (..), breakthru)
+import Game
 import Statistics.Sample (mean, stdDev)
 import System.Random (StdGen, mkStdGen, split)
 import Text.Printf (printf)
@@ -40,8 +43,8 @@ competeOften =
             (mkStdGen i)
             ( \a ->
                 case a of
-                  Gold -> random
-                  Silver -> random
+                  Gold -> Ai.max
+                  Silver -> Ai.max
             )
             []
             (initial breakthru)
@@ -61,4 +64,13 @@ play g ai history state =
           (f Gold, reverse history)
         Nothing ->
           let (g1, g2) = split g
-           in play g2 ai (state : history) (ai (player state) g1 state)
+           in play
+                g2
+                ai
+                (state : history)
+                ( (ai (player state) g1 state)
+                    |> fmap (result state)
+                    |> (\a -> if a == Nothing || a == Just Nothing then traceShow state a else a)
+                    |> join
+                    |> fromMaybe initial_
+                )

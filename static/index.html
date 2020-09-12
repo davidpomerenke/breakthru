@@ -5371,17 +5371,23 @@ var $elm$core$Task$perform = F2(
 	});
 var $elm$browser$Browser$document = _Browser_document;
 var $author$project$Model$Gold = {$: 'Gold'};
+var $author$project$Main$Max = {$: 'Max'};
 var $author$project$Main$Random = {$: 'Random'};
 var $author$project$Main$aiConfig = function (player) {
 	if (player.$ === 'Gold') {
 		return $elm$core$Maybe$Just($author$project$Main$Random);
 	} else {
-		return $elm$core$Maybe$Just($author$project$Main$Random);
+		return $elm$core$Maybe$Just($author$project$Main$Max);
 	}
 };
-var $author$project$Main$GotActions = function (a) {
-	return {$: 'GotActions', a: a};
+var $author$project$Main$GotBoard = function (a) {
+	return {$: 'GotBoard', a: a};
 };
+var $author$project$Model$State = F4(
+	function (lastPlayer, player, gold, silver) {
+		return {gold: gold, lastPlayer: lastPlayer, player: player, silver: silver};
+	});
+var $elm$json$Json$Decode$andThen = _Json_andThen;
 var $author$project$Model$Coordinate = F2(
 	function (x, y) {
 		return {x: x, y: y};
@@ -5407,110 +5413,73 @@ var $author$project$Json$decodeCoordinate = A3(
 		$elm$json$Json$Decode$succeed($author$project$Model$Coordinate)));
 var $elm$json$Json$Decode$index = _Json_decodeIndex;
 var $elm$json$Json$Decode$list = _Json_decodeList;
+var $elm$json$Json$Decode$null = _Json_decodeNull;
+var $elm$json$Json$Decode$oneOf = _Json_oneOf;
+var $elm$json$Json$Decode$nullable = function (decoder) {
+	return $elm$json$Json$Decode$oneOf(
+		_List_fromArray(
+			[
+				$elm$json$Json$Decode$null($elm$core$Maybe$Nothing),
+				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder)
+			]));
+};
 var $elm$core$Tuple$pair = F2(
 	function (a, b) {
 		return _Utils_Tuple2(a, b);
 	});
-var $author$project$Json$decodeActions = $elm$json$Json$Decode$list(
-	A3(
-		$elm$json$Json$Decode$map2,
-		$elm$core$Tuple$pair,
-		A2($elm$json$Json$Decode$index, 0, $author$project$Json$decodeCoordinate),
-		A2($elm$json$Json$Decode$index, 1, $author$project$Json$decodeCoordinate)));
-var $elm$json$Json$Encode$int = _Json_wrap;
-var $elm$json$Json$Encode$object = function (pairs) {
-	return _Json_wrap(
-		A3(
-			$elm$core$List$foldl,
-			F2(
-				function (_v0, obj) {
-					var k = _v0.a;
-					var v = _v0.b;
-					return A3(_Json_addField, k, v, obj);
-				}),
-			_Json_emptyObject(_Utils_Tuple0),
-			pairs));
-};
-var $author$project$Json$encodeCoordinate = function (_v0) {
-	var x = _v0.x;
-	var y = _v0.y;
-	return $elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'x',
-				$elm$json$Json$Encode$int(x)),
-				_Utils_Tuple2(
-				'y',
-				$elm$json$Json$Encode$int(y))
-			]));
-};
-var $elm$json$Json$Encode$null = _Json_encodeNull;
-var $author$project$Json$encodeFlagship = function (flagship) {
-	if (flagship.$ === 'Just') {
-		var coordinate = flagship.a;
-		return $author$project$Json$encodeCoordinate(coordinate);
-	} else {
-		return $elm$json$Json$Encode$null;
-	}
-};
-var $elm$json$Json$Encode$string = _Json_wrap;
-var $author$project$Json$encodePlayer = function (player) {
-	if (player.$ === 'Just') {
-		if (player.a.$ === 'Gold') {
-			var _v1 = player.a;
-			return $elm$json$Json$Encode$string('Gold');
-		} else {
-			var _v2 = player.a;
-			return $elm$json$Json$Encode$string('Silver');
+var $author$project$Json$decodeGold = A3(
+	$elm$json$Json$Decode$map2,
+	$elm$core$Tuple$pair,
+	A2(
+		$elm$json$Json$Decode$index,
+		0,
+		$elm$json$Json$Decode$nullable($author$project$Json$decodeCoordinate)),
+	A2(
+		$elm$json$Json$Decode$index,
+		1,
+		$elm$json$Json$Decode$list($author$project$Json$decodeCoordinate)));
+var $elm$json$Json$Decode$string = _Json_decodeString;
+var $author$project$Model$Silver = {$: 'Silver'};
+var $elm$json$Json$Decode$fail = _Json_fail;
+var $author$project$Json$toMaybePlayer = function (p) {
+	if (p.$ === 'Just') {
+		switch (p.a) {
+			case 'Gold':
+				return $elm$json$Json$Decode$succeed(
+					$elm$core$Maybe$Just($author$project$Model$Gold));
+			case 'Silver':
+				return $elm$json$Json$Decode$succeed(
+					$elm$core$Maybe$Just($author$project$Model$Silver));
+			default:
+				return $elm$json$Json$Decode$fail('Invalid player name.');
 		}
 	} else {
-		return $elm$json$Json$Encode$null;
+		return $elm$json$Json$Decode$succeed($elm$core$Maybe$Nothing);
 	}
 };
-var $elm$json$Json$Encode$list = F2(
-	function (func, entries) {
-		return _Json_wrap(
-			A3(
-				$elm$core$List$foldl,
-				_Json_addEntry(func),
-				_Json_emptyArray(_Utils_Tuple0),
-				entries));
-	});
-var $author$project$Json$encodeState = function (_v0) {
-	var lastPlayer = _v0.lastPlayer;
-	var player = _v0.player;
-	var gold = _v0.gold;
-	var silver = _v0.silver;
-	var _v1 = gold;
-	var flagship = _v1.a;
-	var rest = _v1.b;
-	return $elm$json$Json$Encode$object(
-		_List_fromArray(
-			[
-				_Utils_Tuple2(
-				'lastPlayer',
-				$author$project$Json$encodePlayer(lastPlayer)),
-				_Utils_Tuple2(
-				'player',
-				$author$project$Json$encodePlayer(
-					$elm$core$Maybe$Just(player))),
-				_Utils_Tuple2(
-				'gold',
-				A2(
-					$elm$json$Json$Encode$list,
-					$elm$core$Basics$identity,
-					_List_fromArray(
-						[
-							$author$project$Json$encodeFlagship(flagship),
-							A2($elm$json$Json$Encode$list, $author$project$Json$encodeCoordinate, rest)
-						]))),
-				_Utils_Tuple2(
-				'silver',
-				A2($elm$json$Json$Encode$list, $author$project$Json$encodeCoordinate, silver))
-			]));
+var $author$project$Json$toPlayer = function (p) {
+	return (p === 'Gold') ? $elm$json$Json$Decode$succeed($author$project$Model$Gold) : ((p === 'Silver') ? $elm$json$Json$Decode$succeed($author$project$Model$Silver) : $elm$json$Json$Decode$fail('Invalid player name.'));
 };
-var $elm$json$Json$Decode$decodeString = _Json_runOnString;
+var $author$project$Json$decodeState = A3(
+	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+	'silver',
+	$elm$json$Json$Decode$list($author$project$Json$decodeCoordinate),
+	A3(
+		$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+		'gold',
+		$author$project$Json$decodeGold,
+		A3(
+			$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+			'player',
+			A2($elm$json$Json$Decode$andThen, $author$project$Json$toPlayer, $elm$json$Json$Decode$string),
+			A3(
+				$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
+				'lastPlayer',
+				A2(
+					$elm$json$Json$Decode$andThen,
+					$author$project$Json$toMaybePlayer,
+					$elm$json$Json$Decode$nullable($elm$json$Json$Decode$string)),
+				$elm$json$Json$Decode$succeed($author$project$Model$State)))));
 var $elm$http$Http$BadStatus_ = F2(
 	function (a, b) {
 		return {$: 'BadStatus_', a: a, b: b};
@@ -6053,6 +6022,8 @@ var $elm$core$Dict$update = F3(
 			return A2($elm$core$Dict$remove, targetKey, dictionary);
 		}
 	});
+var $elm$http$Http$emptyBody = _Http_emptyBody;
+var $elm$json$Json$Decode$decodeString = _Json_runOnString;
 var $elm$core$Basics$composeR = F3(
 	function (f, g, x) {
 		return g(
@@ -6124,12 +6095,6 @@ var $elm$http$Http$expectJson = F2(
 						A2($elm$json$Json$Decode$decodeString, decoder, string));
 				}));
 	});
-var $elm$http$Http$jsonBody = function (value) {
-	return A2(
-		_Http_pair,
-		'application/json',
-		A2($elm$json$Json$Encode$encode, 0, value));
-};
 var $elm$http$Http$Request = function (a) {
 	return {$: 'Request', a: a};
 };
@@ -6302,146 +6267,27 @@ var $elm$http$Http$post = function (r) {
 	return $elm$http$Http$request(
 		{body: r.body, expect: r.expect, headers: _List_Nil, method: 'POST', timeout: $elm$core$Maybe$Nothing, tracker: $elm$core$Maybe$Nothing, url: r.url});
 };
-var $author$project$Main$getActions = function (state) {
-	return $elm$http$Http$post(
-		{
-			body: $elm$http$Http$jsonBody(
-				$author$project$Json$encodeState(state)),
-			expect: A2($elm$http$Http$expectJson, $author$project$Main$GotActions, $author$project$Json$decodeActions),
-			url: '/actions'
-		});
-};
-var $author$project$Main$GotBoard = function (a) {
-	return {$: 'GotBoard', a: a};
-};
-var $author$project$Model$State = F4(
-	function (lastPlayer, player, gold, silver) {
-		return {gold: gold, lastPlayer: lastPlayer, player: player, silver: silver};
-	});
-var $elm$json$Json$Decode$andThen = _Json_andThen;
-var $elm$json$Json$Decode$null = _Json_decodeNull;
-var $elm$json$Json$Decode$oneOf = _Json_oneOf;
-var $elm$json$Json$Decode$nullable = function (decoder) {
-	return $elm$json$Json$Decode$oneOf(
-		_List_fromArray(
-			[
-				$elm$json$Json$Decode$null($elm$core$Maybe$Nothing),
-				A2($elm$json$Json$Decode$map, $elm$core$Maybe$Just, decoder)
-			]));
-};
-var $author$project$Json$decodeGold = A3(
-	$elm$json$Json$Decode$map2,
-	$elm$core$Tuple$pair,
-	A2(
-		$elm$json$Json$Decode$index,
-		0,
-		$elm$json$Json$Decode$nullable($author$project$Json$decodeCoordinate)),
-	A2(
-		$elm$json$Json$Decode$index,
-		1,
-		$elm$json$Json$Decode$list($author$project$Json$decodeCoordinate)));
-var $elm$json$Json$Decode$string = _Json_decodeString;
-var $author$project$Model$Silver = {$: 'Silver'};
-var $elm$json$Json$Decode$fail = _Json_fail;
-var $author$project$Json$toMaybePlayer = function (p) {
-	return _Utils_eq(
-		p,
-		$elm$core$Maybe$Just('Gold')) ? $elm$json$Json$Decode$succeed(
-		$elm$core$Maybe$Just($author$project$Model$Gold)) : (_Utils_eq(
-		p,
-		$elm$core$Maybe$Just('Silver')) ? $elm$json$Json$Decode$succeed(
-		$elm$core$Maybe$Just($author$project$Model$Silver)) : $elm$json$Json$Decode$fail('Invalid player name.'));
-};
-var $author$project$Json$toPlayer = function (p) {
-	return (p === 'Gold') ? $elm$json$Json$Decode$succeed($author$project$Model$Gold) : ((p === 'Silver') ? $elm$json$Json$Decode$succeed($author$project$Model$Silver) : $elm$json$Json$Decode$fail('Invalid player name.'));
-};
-var $author$project$Json$decodeModel = A3(
-	$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-	'silver',
-	$elm$json$Json$Decode$list($author$project$Json$decodeCoordinate),
-	A3(
-		$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-		'gold',
-		$author$project$Json$decodeGold,
-		A3(
-			$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-			'player',
-			A2($elm$json$Json$Decode$andThen, $author$project$Json$toPlayer, $elm$json$Json$Decode$string),
-			A3(
-				$NoRedInk$elm_json_decode_pipeline$Json$Decode$Pipeline$required,
-				'lastPlayer',
-				A2(
-					$elm$json$Json$Decode$andThen,
-					$author$project$Json$toMaybePlayer,
-					$elm$json$Json$Decode$nullable($elm$json$Json$Decode$string)),
-				$elm$json$Json$Decode$succeed($author$project$Model$State)))));
-var $author$project$Main$getAiMove = F2(
-	function (ai, state) {
-		return $elm$http$Http$post(
-			{
-				body: $elm$http$Http$jsonBody(
-					$author$project$Json$encodeState(state)),
-				expect: A2($elm$http$Http$expectJson, $author$project$Main$GotBoard, $author$project$Json$decodeModel),
-				url: '/ai/' + 'random'
-			});
+var $author$project$Main$getInit = $elm$http$Http$post(
+	{
+		body: $elm$http$Http$emptyBody,
+		expect: A2($elm$http$Http$expectJson, $author$project$Main$GotBoard, $author$project$Json$decodeState),
+		url: '/init'
 	});
 var $author$project$Main$init = function (_v0) {
-	var init_ = {
-		gold: _Utils_Tuple2(
-			$elm$core$Maybe$Just(
-				{x: 5, y: 5}),
-			_List_fromArray(
-				[
-					{x: 3, y: 4},
-					{x: 3, y: 5},
-					{x: 3, y: 6},
-					{x: 7, y: 4},
-					{x: 7, y: 5},
-					{x: 7, y: 6},
-					{x: 4, y: 3},
-					{x: 5, y: 3},
-					{x: 6, y: 3},
-					{x: 4, y: 7},
-					{x: 5, y: 7},
-					{x: 6, y: 7}
-				])),
-		lastPlayer: $elm$core$Maybe$Nothing,
-		player: $author$project$Model$Gold,
-		silver: _List_fromArray(
-			[
-				{x: 1, y: 3},
-				{x: 1, y: 4},
-				{x: 1, y: 5},
-				{x: 1, y: 6},
-				{x: 1, y: 7},
-				{x: 9, y: 3},
-				{x: 9, y: 4},
-				{x: 9, y: 5},
-				{x: 9, y: 6},
-				{x: 9, y: 7},
-				{x: 3, y: 1},
-				{x: 4, y: 1},
-				{x: 5, y: 1},
-				{x: 6, y: 1},
-				{x: 7, y: 1},
-				{x: 3, y: 9},
-				{x: 4, y: 9},
-				{x: 5, y: 9},
-				{x: 6, y: 9},
-				{x: 7, y: 9}
-			])
-	};
 	return _Utils_Tuple2(
-		{actions: _List_Nil, ai: $author$project$Main$aiConfig, selectedShip: $elm$core$Maybe$Nothing, state: init_, winner: $elm$core$Maybe$Nothing},
-		function () {
-			var _v1 = $author$project$Main$aiConfig(init_.player);
-			if (_v1.$ === 'Just') {
-				var ai = _v1.a;
-				return A2($author$project$Main$getAiMove, ai, init_);
-			} else {
-				return $author$project$Main$getActions(init_);
-			}
-		}());
+		{
+			actions: _List_Nil,
+			ai: $author$project$Main$aiConfig,
+			selectedShip: $elm$core$Maybe$Nothing,
+			state: {
+				gold: _Utils_Tuple2($elm$core$Maybe$Nothing, _List_Nil),
+				lastPlayer: $elm$core$Maybe$Nothing,
+				player: $author$project$Model$Gold,
+				silver: _List_Nil
+			},
+			winner: $elm$core$Maybe$Nothing
+		},
+		$author$project$Main$getInit);
 };
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
@@ -6620,6 +6466,7 @@ var $mdgriffith$elm_ui$Internal$Flag$alignBottom = $mdgriffith$elm_ui$Internal$F
 var $mdgriffith$elm_ui$Internal$Flag$alignRight = $mdgriffith$elm_ui$Internal$Flag$flag(40);
 var $mdgriffith$elm_ui$Internal$Flag$centerX = $mdgriffith$elm_ui$Internal$Flag$flag(42);
 var $mdgriffith$elm_ui$Internal$Flag$centerY = $mdgriffith$elm_ui$Internal$Flag$flag(43);
+var $elm$json$Json$Encode$string = _Json_wrap;
 var $elm$html$Html$Attributes$stringProperty = F2(
 	function (key, string) {
 		return A2(
@@ -9066,6 +8913,28 @@ var $mdgriffith$elm_ui$Internal$Model$staticRoot = function (opts) {
 					]),
 				_List_Nil);
 	}
+};
+var $elm$json$Json$Encode$list = F2(
+	function (func, entries) {
+		return _Json_wrap(
+			A3(
+				$elm$core$List$foldl,
+				_Json_addEntry(func),
+				_Json_emptyArray(_Utils_Tuple0),
+				entries));
+	});
+var $elm$json$Json$Encode$object = function (pairs) {
+	return _Json_wrap(
+		A3(
+			$elm$core$List$foldl,
+			F2(
+				function (_v0, obj) {
+					var k = _v0.a;
+					var v = _v0.b;
+					return A3(_Json_addField, k, v, obj);
+				}),
+			_Json_emptyObject(_Utils_Tuple0),
+			pairs));
 };
 var $elm$core$List$any = F2(
 	function (isOkay, list) {
@@ -12613,6 +12482,116 @@ var $author$project$Main$page = function (model) {
 					A2($elm$core$List$range, 0, 10)))));
 };
 var $author$project$Main$WaitedForAiMove = {$: 'WaitedForAiMove'};
+var $author$project$Main$GotActions = function (a) {
+	return {$: 'GotActions', a: a};
+};
+var $author$project$Json$decodeActions = $elm$json$Json$Decode$list(
+	A3(
+		$elm$json$Json$Decode$map2,
+		$elm$core$Tuple$pair,
+		A2($elm$json$Json$Decode$index, 0, $author$project$Json$decodeCoordinate),
+		A2($elm$json$Json$Decode$index, 1, $author$project$Json$decodeCoordinate)));
+var $elm$json$Json$Encode$int = _Json_wrap;
+var $author$project$Json$encodeCoordinate = function (_v0) {
+	var x = _v0.x;
+	var y = _v0.y;
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'x',
+				$elm$json$Json$Encode$int(x)),
+				_Utils_Tuple2(
+				'y',
+				$elm$json$Json$Encode$int(y))
+			]));
+};
+var $elm$json$Json$Encode$null = _Json_encodeNull;
+var $author$project$Json$encodeFlagship = function (flagship) {
+	if (flagship.$ === 'Just') {
+		var coordinate = flagship.a;
+		return $author$project$Json$encodeCoordinate(coordinate);
+	} else {
+		return $elm$json$Json$Encode$null;
+	}
+};
+var $author$project$Json$encodePlayer = function (player) {
+	if (player.$ === 'Just') {
+		if (player.a.$ === 'Gold') {
+			var _v1 = player.a;
+			return $elm$json$Json$Encode$string('Gold');
+		} else {
+			var _v2 = player.a;
+			return $elm$json$Json$Encode$string('Silver');
+		}
+	} else {
+		return $elm$json$Json$Encode$null;
+	}
+};
+var $author$project$Json$encodeState = function (_v0) {
+	var lastPlayer = _v0.lastPlayer;
+	var player = _v0.player;
+	var gold = _v0.gold;
+	var silver = _v0.silver;
+	var _v1 = gold;
+	var flagship = _v1.a;
+	var rest = _v1.b;
+	return $elm$json$Json$Encode$object(
+		_List_fromArray(
+			[
+				_Utils_Tuple2(
+				'lastPlayer',
+				$author$project$Json$encodePlayer(lastPlayer)),
+				_Utils_Tuple2(
+				'player',
+				$author$project$Json$encodePlayer(
+					$elm$core$Maybe$Just(player))),
+				_Utils_Tuple2(
+				'gold',
+				A2(
+					$elm$json$Json$Encode$list,
+					$elm$core$Basics$identity,
+					_List_fromArray(
+						[
+							$author$project$Json$encodeFlagship(flagship),
+							A2($elm$json$Json$Encode$list, $author$project$Json$encodeCoordinate, rest)
+						]))),
+				_Utils_Tuple2(
+				'silver',
+				A2($elm$json$Json$Encode$list, $author$project$Json$encodeCoordinate, silver))
+			]));
+};
+var $elm$http$Http$jsonBody = function (value) {
+	return A2(
+		_Http_pair,
+		'application/json',
+		A2($elm$json$Json$Encode$encode, 0, value));
+};
+var $author$project$Main$getActions = function (state) {
+	return $elm$http$Http$post(
+		{
+			body: $elm$http$Http$jsonBody(
+				$author$project$Json$encodeState(state)),
+			expect: A2($elm$http$Http$expectJson, $author$project$Main$GotActions, $author$project$Json$decodeActions),
+			url: '/actions'
+		});
+};
+var $author$project$Main$getAiMove = F2(
+	function (ai, state) {
+		return $elm$http$Http$post(
+			{
+				body: $elm$http$Http$jsonBody(
+					$author$project$Json$encodeState(state)),
+				expect: A2($elm$http$Http$expectJson, $author$project$Main$GotBoard, $author$project$Json$decodeState),
+				url: '/ai/' + function () {
+					if (ai.$ === 'Random') {
+						return 'random';
+					} else {
+						return 'max';
+					}
+				}()
+			});
+	});
 var $author$project$Json$encodeMove = function (_v0) {
 	var a = _v0.a;
 	var b = _v0.b;
@@ -12644,7 +12623,7 @@ var $author$project$Main$getResult = F2(
 				body: $elm$http$Http$jsonBody(
 					$author$project$Json$encodeStateAndMove(
 						_Utils_Tuple2(state, action))),
-				expect: A2($elm$http$Http$expectJson, $author$project$Main$GotBoard, $author$project$Json$decodeModel),
+				expect: A2($elm$http$Http$expectJson, $author$project$Main$GotBoard, $author$project$Json$decodeState),
 				url: '/result'
 			});
 	});
@@ -12664,6 +12643,7 @@ var $author$project$Main$getUtility = function (state) {
 };
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $author$project$Main$pause = 100;
 var $elm$core$Process$sleep = _Process_sleep;
 var $author$project$Main$update = F2(
 	function (msg, model) {
@@ -12689,7 +12669,7 @@ var $author$project$Main$update = F2(
 						_Utils_update(
 							model,
 							{selectedShip: $elm$core$Maybe$Nothing, state: a}),
-						$author$project$Main$getUtility(state));
+						$author$project$Main$getUtility(a));
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				}
@@ -12711,7 +12691,7 @@ var $author$project$Main$update = F2(
 									function (_v5) {
 										return $author$project$Main$WaitedForAiMove;
 									},
-									$elm$core$Process$sleep(1000));
+									$elm$core$Process$sleep($author$project$Main$pause));
 							} else {
 								return $author$project$Main$getActions(model.state);
 							}

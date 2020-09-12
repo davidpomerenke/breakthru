@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fdc3dc2796aaf7059809c065e8ad3d3a01bd8942e89450d35deaad8d2ffde997
+-- hash: 51ca00c9747086a10d8354e676c7aa5c9ec07553e75ec4bf8e671eee94730479
 
 name:           breakthru
 version:        0.1.0.0
@@ -39,6 +39,7 @@ library
     , bytestring
     , flow
     , http-types
+    , listsafe
     , open-browser
     , parallel
     , random >=1.1 && <2
@@ -63,6 +64,7 @@ executable breakthru-exe
     , bytestring
     , flow
     , http-types
+    , listsafe
     , open-browser
     , parallel
     , random >=1.1 && <2
@@ -87,6 +89,7 @@ test-suite breakthru-test
     , bytestring
     , flow
     , http-types
+    , listsafe
     , open-browser
     , parallel
     , random >=1.1 && <2

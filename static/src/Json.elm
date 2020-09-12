@@ -10,7 +10,7 @@ import Model exposing (Coordinate, Player(..), State)
 
 
 --DECODE
- 
+
 
 decodeActions : D.Decoder (List ( Coordinate, Coordinate ))
 decodeActions =
@@ -30,14 +30,18 @@ decodeCoordinate =
 
 toMaybePlayer : Maybe String -> D.Decoder (Maybe Player)
 toMaybePlayer p =
-    if p == Just "Gold" then
-        D.succeed (Just Gold)
+    case p of
+        Just "Gold" ->
+            D.succeed (Just Gold)
 
-    else if p == Just "Silver" then
-        D.succeed (Just Silver)
+        Just "Silver" ->
+            D.succeed (Just Silver)
 
-    else
-        D.fail "Invalid player name."
+        Just _ ->
+            D.fail "Invalid player name."
+
+        Nothing ->
+            D.succeed Nothing
 
 
 toPlayer : String -> D.Decoder Player
@@ -58,12 +62,14 @@ decodeGold =
         (D.index 0 (D.nullable decodeCoordinate))
         (D.index 1 (D.list decodeCoordinate))
 
+
 decodeUtility : D.Decoder Float
-decodeUtility = D.float
+decodeUtility =
+    D.float
 
 
-decodeModel : D.Decoder State
-decodeModel =
+decodeState : D.Decoder State
+decodeState =
     D.succeed State
         |> required "lastPlayer" (D.nullable D.string |> D.andThen toMaybePlayer)
         |> required "player" (D.string |> D.andThen toPlayer)

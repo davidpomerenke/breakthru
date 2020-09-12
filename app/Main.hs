@@ -3,35 +3,30 @@
 
 module Main where
 
-import Ai (move, random)
+import Ai
 import Compete (compete)
+import Control.Monad (join)
 import Data.Aeson (FromJSON, ToJSON, decode, encode)
 import Data.ByteString.Lazy (ByteString, append, fromStrict, pack)
 import Data.Function ((&))
+import Data.Maybe (fromMaybe)
 import Debug.Trace
 import Flow ((<|), (|>))
 import Game
-  ( Coordinate (..),
-    Game (..),
-    Player (..),
-    State,
-    Utility (..),
-    breakthru,
-    move,
-  )
 import Network.HTTP.Types (status200, status400)
 import Network.Wai
   ( Application,
     Request (rawPathInfo, requestMethod),
+    Response (..),
     getRequestBodyChunk,
     responseFile,
     responseLBS,
   )
 import Network.Wai.Handler.Warp (run)
-import System.Random (mkStdGen)
+import System.Random (StdGen, mkStdGen)
 import Web.Browser (openBrowser)
 
--- | Main function.
+-- | Main function. Plug in `serve` (for playing in the browser) or `compete` here, depending on what mode you want the program to start in.
 main :: IO ()
 main = compete
 
@@ -49,7 +44,7 @@ serve =
 -- * Provides an API representing the game AI, which is called by the static files after each move of the user.
 app :: Application
 app request respond =
-  let Game {actions, utility} = breakthru
+  let Game {actions, utility, result} = breakthru
 
       fail =
         responseLBS
@@ -64,6 +59,11 @@ app request respond =
             -- API
 
             "POST"
+              | rawPathInfo request == "/init" ->
+                responseLBS
+                  status200
+                  [("Content-Type", "text/plain")]
+                  (initial_ |> encode)
               | rawPathInfo request == "/actions" ->
                 case decode $ fromStrict body of
                   Just state ->
@@ -94,21 +94,29 @@ app request respond =
                           |> encode
                       )
                   _ -> fail
-              | rawPathInfo request == "/ai/move" ->
-                case decode $ fromStrict body of
-                  Just state ->
-                    responseLBS
-                      status200
-                      [("Content-Type", "text/plain")]
-                      (Ai.move state |> encode)
-                  _ -> fail
               | rawPathInfo request == "/ai/random" ->
                 case decode $ fromStrict body of
                   Just state ->
                     responseLBS
                       status200
                       [("Content-Type", "text/plain")]
-                      (Ai.random (mkStdGen 137) state |> encode)
+                      ( Ai.random (mkStdGen 137) state |> fmap (result state)
+                          |> join
+                          |> fromMaybe state
+                          |> encode
+                      )
+                  _ -> fail
+              | rawPathInfo request == "/ai/max" ->
+                case decode $ fromStrict body of
+                  Just state ->
+                    responseLBS
+                      status200
+                      [("Content-Type", "text/plain")]
+                      ( Ai.max (mkStdGen 137) state |> fmap (result state)
+                          |> join
+                          |> fromMaybe state
+                          |> encode
+                      )
                   _ -> fail
               | otherwise -> fail
             -- MAIN PAGE

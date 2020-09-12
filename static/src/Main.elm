@@ -9,7 +9,7 @@ import Element.Font as Font
 import Html exposing (Html)
 import Html.Attributes exposing (style)
 import Http
-import Json exposing (decodeActions, decodeModel, decodeUtility, encodeState, encodeStateAndMove)
+import Json exposing (decodeActions, decodeState, decodeUtility, encodeState, encodeStateAndMove)
 import Model exposing (Action, Coordinate, Player(..), State)
 import Process
 import Task
@@ -23,11 +23,17 @@ aiConfig =
                 Just Random
 
             Silver ->
-                Just Random
+                Just Max
+
+
+pause : Float
+pause =
+    100
 
 
 type Ai
     = Random
+    | Max
 
 
 type alias Model =
@@ -49,26 +55,18 @@ type Msg
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    let
-        init_ =
+    ( { ai = aiConfig
+      , actions = []
+      , selectedShip = Nothing
+      , winner = Nothing
+      , state =
             { lastPlayer = Nothing
             , player = Gold
             , gold = ( Nothing, [] )
             , silver = []
             }
-    in
-    ( { ai = aiConfig
-      , actions = []
-      , selectedShip = Nothing
-      , winner = Nothing
-      , state = init_
       }
-    , case aiConfig init_.player of
-        Just ai ->
-            getAiMove ai init_
-
-        Nothing ->
-            getActions init_
+    , getInit
     )
 
 
@@ -93,7 +91,7 @@ update msg ({ state } as model) =
             case r of
                 Ok a ->
                     ( { model | state = a, selectedShip = Nothing }
-                    , getUtility state
+                    , getUtility a
                     )
 
                 Err _ ->
@@ -115,7 +113,7 @@ update msg ({ state } as model) =
                       }
                     , case model.ai model.state.player of
                         Just _ ->
-                            Process.sleep 1000 |> Task.perform (\_ -> WaitedForAiMove)
+                            Process.sleep pause |> Task.perform (\_ -> WaitedForAiMove)
 
                         Nothing ->
                             getActions model.state
@@ -171,6 +169,15 @@ main =
 --
 
 
+getInit : Cmd Msg
+getInit =
+    Http.post
+        { url = "/init"
+        , body = Http.emptyBody
+        , expect = Http.expectJson GotBoard decodeState
+        }
+
+
 getActions : State -> Cmd Msg
 getActions state =
     Http.post
@@ -185,7 +192,7 @@ getResult state action =
     Http.post
         { url = "/result"
         , body = Http.jsonBody (encodeStateAndMove ( state, action ))
-        , expect = Http.expectJson GotBoard decodeModel
+        , expect = Http.expectJson GotBoard decodeState
         }
 
 
@@ -206,9 +213,12 @@ getAiMove ai state =
                 ++ (case ai of
                         Random ->
                             "random"
+
+                        Max ->
+                            "max"
                    )
         , body = Http.jsonBody (encodeState state)
-        , expect = Http.expectJson GotBoard decodeModel
+        , expect = Http.expectJson GotBoard decodeState
         }
 
 
