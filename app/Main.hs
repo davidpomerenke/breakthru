@@ -4,13 +4,13 @@
 module Main where
 
 import Ai
-import Compete (compete)
 import Control.Monad (join)
 import Data.Aeson (FromJSON, ToJSON, decode, encode)
 import Data.ByteString.Lazy (ByteString, append, fromStrict, pack)
 import Data.Function ((&))
 import Data.Maybe (fromMaybe)
 import Debug.Trace
+import Evaluate
 import Flow ((<|), (|>))
 import Game
 import Network.HTTP.Types (status200, status400)
@@ -23,12 +23,18 @@ import Network.Wai
     responseLBS,
   )
 import Network.Wai.Handler.Warp (run)
+import System.Environment
 import System.Random (StdGen, mkStdGen)
 import Web.Browser (openBrowser)
 
 -- | Main function. Plug in `serve` (for playing in the browser) or `compete` here, depending on what mode you want the program to start in.
 main :: IO ()
-main = compete
+main = do
+  args <- getArgs
+  case args of
+    ["evaluate"] ->
+      evaluate
+    _ -> serve
 
 -- | Runs the server application.
 serve :: IO ()

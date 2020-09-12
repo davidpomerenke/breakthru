@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 51ca00c9747086a10d8354e676c7aa5c9ec07553e75ec4bf8e671eee94730479
+-- hash: 9657808bd944e092f80c898b583aa17240fbc2d62dc59278f514ed617532b6ce
 
 name:           breakthru
 version:        0.1.0.0
@@ -37,13 +37,16 @@ library
       aeson
     , base >=4.7 && <5
     , bytestring
+    , cassava
     , flow
     , http-types
     , listsafe
     , open-browser
     , parallel
+    , process
     , random >=1.1 && <2
     , statistics
+    , text
     , vector
     , wai
     , warp
@@ -52,7 +55,7 @@ library
 executable breakthru-exe
   main-is: Main.hs
   other-modules:
-      Compete
+      Evaluate
       Paths_breakthru
   hs-source-dirs:
       app
@@ -62,13 +65,16 @@ executable breakthru-exe
     , base >=4.7 && <5
     , breakthru
     , bytestring
+    , cassava
     , flow
     , http-types
     , listsafe
     , open-browser
     , parallel
+    , process
     , random >=1.1 && <2
     , statistics
+    , text
     , vector
     , wai
     , warp
@@ -87,13 +93,16 @@ test-suite breakthru-test
     , base >=4.7 && <5
     , breakthru
     , bytestring
+    , cassava
     , flow
     , http-types
     , listsafe
     , open-browser
     , parallel
+    , process
     , random >=1.1 && <2
     , statistics
+    , text
     , vector
     , wai
     , warp

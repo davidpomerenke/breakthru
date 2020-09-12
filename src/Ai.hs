@@ -21,6 +21,15 @@ random g state =
       i = (randomR (0, length actions_ - 1) g |> fst)
    in (actions_ !! i)
 
+heuristic :: Player -> State -> Utility
+heuristic player state =
+  Utility
+    ( fromIntegral
+        ( length (fleetOfPlayer player state)
+            - length (fleetOfPlayer (other player) state)
+        )
+    )
+
 max :: StdGen -> Ai
 max g state@State {gold, player} =
   let Game {actions, result, utility} = breakthru
@@ -32,12 +41,7 @@ max g state@State {gold, player} =
               ( action,
                 utility state
                   |> fmap (\f -> let Utility u = f player in 1000 * u)
-                  |> fromMaybe
-                    ( fromIntegral
-                        ( length (fleetOfPlayer player result)
-                            - length (fleetOfPlayer (other player) result)
-                        )
-                    )
+                  |> fromMaybe (let Utility u = heuristic player result in u)
               )
           )
         |> foldl
@@ -51,6 +55,34 @@ max g state@State {gold, player} =
                     (bestActions, bestValue)
           )
           ([], -1000)
+        |> fst
+        |> ( \l ->
+               let i = (randomR (0, length l - 1) g |> fst)
+                in l !! i
+           )
+
+min :: StdGen -> Ai
+min g state@State {gold, player} =
+  let Game {actions, result, utility} = breakthru
+   in actions state
+        |> map (\action -> result state action |> fmap (\result -> (action, result)))
+        |> catMaybes
+        |> map
+          ( \(action, result) ->
+              ( action,
+                utility state
+                  |> fmap (\f -> let Utility u = f player in -1000 * u)
+                  |> fromMaybe (let Utility u = heuristic player result in u)
+              )
+          )
+        |> foldl
+          ( \(bestActions, bestValue) (action, value) ->
+              if
+                  | value < bestValue -> ([action], value)
+                  | value == bestValue -> (action : bestActions, bestValue)
+                  | otherwise -> (bestActions, bestValue)
+          )
+          ([], 1000)
         |> fst
         |> ( \l ->
                let i = (randomR (0, length l - 1) g |> fst)
