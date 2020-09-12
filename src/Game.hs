@@ -2,16 +2,7 @@
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Game
-  ( Game (..),
-    State (..),
-    Coordinate (..),
-    Player (..),
-    Utility (..),
-    breakthru,
-    move,
-  )
-where
+module Game where
 
 import Data.Aeson (FromJSON, ToJSON)
 import Data.List ((\\))
@@ -231,7 +222,7 @@ result_ =
           Nothing
 
 utility_ :: State -> Maybe (Player -> Utility)
-utility_ = \State {gold = (flagship, _)} ->
+utility_ = \state@State {gold = (flagship, _)} ->
   case flagship of
     Nothing ->
       Just
@@ -241,6 +232,7 @@ utility_ = \State {gold = (flagship, _)} ->
         )
     Just Coordinate {x, y} ->
       if x == 0 || x == 10 || y == 0 || y == 10
+        || length (fleetOfPlayer Silver state) == 0
         then
           Just
             ( \player -> case player of
@@ -262,7 +254,11 @@ fleetOfPlayer :: Player -> State -> Fleet
 fleetOfPlayer player (State {gold = (flagship, rest), silver}) =
   case player of
     Gold ->
-      (flagship |> fmap (\a -> [a]) |> fromMaybe []) ++ rest
+      case flagship of
+        Just a ->
+          a : rest
+        Nothing ->
+          rest
     Silver ->
       silver
 
