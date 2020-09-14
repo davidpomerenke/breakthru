@@ -53,7 +53,7 @@ type Action = (Coordinate, Coordinate)
 
 -- | Utility of a player.
 data Utility = Utility Float
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, Ord)
 
 -- BREAKTHRU SPECIFICATION
 
