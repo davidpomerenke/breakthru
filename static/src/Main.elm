@@ -1,4 +1,4 @@
-module Main exposing (main)
+module Main exposing (main, Model, Msg(..), update, page)
 
 import Browser
 import Element exposing (..)
@@ -20,10 +20,10 @@ aiConfig =
     \player ->
         case player of
             Gold ->
-                Just Random
+                Just Minimax
 
             Silver ->
-                Just Max
+                Just Random
 
 
 pause : Float
@@ -34,6 +34,7 @@ pause =
 type Ai
     = Random
     | Max
+    | Minimax
 
 
 type alias Model =
@@ -51,6 +52,7 @@ type Msg
     | GotUtility (Result Http.Error Float)
     | WaitedForAiMove
     | SelectShip (Maybe Coordinate)
+    | ShowBoardAndChill (Result Http.Error State)
 
 
 init : () -> ( Model, Cmd Msg )
@@ -150,6 +152,17 @@ update msg ({ state } as model) =
                     Cmd.none
             )
 
+        ShowBoardAndChill r ->
+            case r of
+                Ok a ->
+                    ( { model | state = a, selectedShip = Nothing }
+                    , Cmd.none
+                    )
+
+                Err _ ->
+                    ( model, Cmd.none )
+        
+
 
 main : Program () Model Msg
 main =
@@ -216,6 +229,9 @@ getAiMove ai state =
 
                         Max ->
                             "max"
+
+                        Minimax ->
+                            "minimax"
                    )
         , body = Http.jsonBody (encodeState state)
         , expect = Http.expectJson GotBoard decodeState
