@@ -156,7 +156,7 @@ update msg ({ state } as model) =
             case r of
                 Ok a ->
                     ( { model | state = a, selectedShip = Nothing }
-                    , Cmd.none
+                    , getActions a
                     )
 
                 Err _ ->
