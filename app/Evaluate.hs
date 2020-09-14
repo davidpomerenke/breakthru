@@ -5,7 +5,7 @@ module Evaluate where
 
 import Ai
 import Control.Monad (join)
-import Control.Parallel.Strategies (parMap, rseq)
+import Control.Parallel.Strategies (parMap, rpar)
 import Data.ByteString.Lazy.Char8 (unpack)
 import Data.Csv
 import Data.Maybe (fromMaybe)
@@ -24,7 +24,7 @@ import Text.Printf (printf)
 evaluate =
   let results =
         ais
-          |> concatMap
+          |> map
             ( \(s1, ai1) ->
                 ais
                   |> map
@@ -38,38 +38,42 @@ evaluate =
                                 )
                             vUtilities = utilities |> map float2Double |> fromList
                             vLengths = lengths |> map int2Double |> fromList
-                         in ( s1,
-                              s2,
-                              vUtilities |> mean,
-                              vUtilities |> stdDev,
-                              vLengths |> mean,
-                              vLengths |> stdDev
+                         in ( \_ ->
+                                ( s1,
+                                  s2,
+                                  vUtilities |> mean,
+                                  vUtilities |> stdDev,
+                                  vLengths |> mean,
+                                  vLengths |> stdDev
+                                )
                             )
                     )
             )
-   in 
-     let path = "evaluation/results.csv" in do
-        ( writeFile
-            path
-            ( "Gold,Silver,Utility,Utility (StdDev),Ply-Depth,Ply-Depth (StdDev)\n"
-                ++ (unpack (encode (results)))
-            )
-          )
-        putStrLn ("Written evaluation to ./" ++ path)
-        putStrLn "Run `cd evaluation && pipenv run python __main__.py` to create visualizations."
+          |> concat
+          |> parMap rpar (\a -> a ())
+   in let path = "evaluation/results.csv"
+       in do
+            ( writeFile
+                path
+                ( "Gold,Silver,Utility,Utility (StdDev),Ply-Depth,Ply-Depth (StdDev)\n"
+                    ++ (unpack (encode (results)))
+                )
+              )
+            putStrLn ("Written evaluation to ./" ++ path)
+            putStrLn "Run `cd evaluation && pipenv run python __main__.py` to create visualizations."
 
 ais :: [(Text, (StdGen -> Ai))]
 ais =
   [ ("Random", Ai.random),
     ("Max", Ai.max),
-    ("Min", Ai.min)
+    ("Min", Ai.minimax 1)
   ]
 
 -- | Run multiple AIs against each other.
 playOften :: (Player -> StdGen -> Ai) -> ([Float], [Int])
 playOften ais =
-  [1 .. 256]
-    |> parMap rseq (\i -> play (mkStdGen i) ais [] (initial breakthru))
+  [1 .. 1]
+    |> parMap rpar (\i -> play (mkStdGen i) ais [] (initial breakthru))
     |> foldl
       ( \(us, ls) (Utility u, history) ->
           (u : us, length history : ls)
