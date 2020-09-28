@@ -10,6 +10,11 @@ import Data.Maybe (fromMaybe)
 import Flow ((<|), (|>))
 import GHC.Generics (Generic)
 
+{- TODO
+- only one ship → only one move
+- blocking situation = no actions → draw
+-}
+
 -- | Performs an action given a state.
 move :: State -> Action -> State
 move state action =

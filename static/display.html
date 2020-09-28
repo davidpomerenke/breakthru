@@ -12476,12 +12476,11 @@ var $author$project$Main$page = function (model) {
 };
 var $author$project$Main$WaitedForAiMove = {$: 'WaitedForAiMove'};
 var $author$project$Main$Minimax = {$: 'Minimax'};
-var $author$project$Main$Random = {$: 'Random'};
 var $author$project$Main$aiConfig = function (player) {
 	if (player.$ === 'Gold') {
-		return $elm$core$Maybe$Just($author$project$Main$Minimax);
+		return $elm$core$Maybe$Nothing;
 	} else {
-		return $elm$core$Maybe$Just($author$project$Main$Random);
+		return $elm$core$Maybe$Just($author$project$Main$Minimax);
 	}
 };
 var $author$project$Main$GotActions = function (a) {

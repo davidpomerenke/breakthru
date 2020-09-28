@@ -5372,12 +5372,11 @@ var $elm$core$Task$perform = F2(
 var $elm$browser$Browser$document = _Browser_document;
 var $author$project$Model$Gold = {$: 'Gold'};
 var $author$project$Main$Minimax = {$: 'Minimax'};
-var $author$project$Main$Random = {$: 'Random'};
 var $author$project$Main$aiConfig = function (player) {
 	if (player.$ === 'Gold') {
-		return $elm$core$Maybe$Just($author$project$Main$Minimax);
+		return $elm$core$Maybe$Nothing;
 	} else {
-		return $elm$core$Maybe$Just($author$project$Main$Random);
+		return $elm$core$Maybe$Just($author$project$Main$Minimax);
 	}
 };
 var $author$project$Main$GotBoard = function (a) {

@@ -46,7 +46,7 @@ max g state@State {gold, player} =
           |> map
             ( \(action, result) ->
                 ( action,
-                  utility state
+                  utility result
                     |> fmap (\f -> let Utility u = f player in 1000 * u)
                     |> fromMaybe (let Utility u = heuristic result player in u)
                 )
@@ -79,13 +79,13 @@ innerMiniMax depth g state@State {gold, player} =
                   |> fmap
                     ( \result ->
                         ( action,
-                          utility state
+                          utility result
                             |> fromMaybe
                               ( if depth > 1
                                   then
                                     innerMiniMax (depth - 1) g2 result
                                       |> fmap snd
-                                      |> fromMaybe (\_ -> traceShow (state, action) Utility 0)
+                                      |> fromMaybe (traceShow (state, action, result) heuristic result)
                                   else heuristic result
                               )
                         )
