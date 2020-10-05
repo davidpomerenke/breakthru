@@ -6288,8 +6288,7 @@ var $author$project$Display$init = function (_v0) {
 			ai: function (_v1) {
 				return $elm$core$Maybe$Nothing;
 			},
-			beforeLastState: emptyState,
-			lastState: emptyState,
+			lastStates: _List_Nil,
 			selectedShip: $elm$core$Maybe$Nothing,
 			state: emptyState,
 			winner: $elm$core$Maybe$Nothing
@@ -6302,6 +6301,8 @@ var $author$project$Main$Back = {$: 'Back'};
 var $mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
 	return {$: 'AlignX', a: a};
 };
+var $mdgriffith$elm_ui$Internal$Model$Right = {$: 'Right'};
+var $mdgriffith$elm_ui$Element$alignRight = $mdgriffith$elm_ui$Internal$Model$AlignX($mdgriffith$elm_ui$Internal$Model$Right);
 var $mdgriffith$elm_ui$Internal$Model$CenterX = {$: 'CenterX'};
 var $mdgriffith$elm_ui$Element$centerX = $mdgriffith$elm_ui$Internal$Model$AlignX($mdgriffith$elm_ui$Internal$Model$CenterX);
 var $mdgriffith$elm_ui$Internal$Model$AlignY = function (a) {
@@ -12180,11 +12181,40 @@ var $elm$html$Html$Events$onClick = function (msg) {
 		$elm$json$Json$Decode$succeed(msg));
 };
 var $mdgriffith$elm_ui$Element$Events$onClick = A2($elm$core$Basics$composeL, $mdgriffith$elm_ui$Internal$Model$Attr, $elm$html$Html$Events$onClick);
+var $mdgriffith$elm_ui$Internal$Model$PaddingStyle = F5(
+	function (a, b, c, d, e) {
+		return {$: 'PaddingStyle', a: a, b: b, c: c, d: d, e: e};
+	});
+var $mdgriffith$elm_ui$Internal$Flag$padding = $mdgriffith$elm_ui$Internal$Flag$flag(2);
+var $mdgriffith$elm_ui$Element$padding = function (x) {
+	var f = x;
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$padding,
+		A5(
+			$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
+			'p-' + $elm$core$String$fromInt(x),
+			f,
+			f,
+			f,
+			f));
+};
 var $mdgriffith$elm_ui$Element$rgb = F3(
 	function (r, g, b) {
 		return A4($mdgriffith$elm_ui$Internal$Model$Rgba, r, g, b, 1);
 	});
 var $mdgriffith$elm_ui$Element$rgba = $mdgriffith$elm_ui$Internal$Model$Rgba;
+var $mdgriffith$elm_ui$Internal$Flag$borderRound = $mdgriffith$elm_ui$Internal$Flag$flag(17);
+var $mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
+	return A2(
+		$mdgriffith$elm_ui$Internal$Model$StyleClass,
+		$mdgriffith$elm_ui$Internal$Flag$borderRound,
+		A3(
+			$mdgriffith$elm_ui$Internal$Model$Single,
+			'br-' + $elm$core$String$fromInt(radius),
+			'border-radius',
+			$elm$core$String$fromInt(radius) + 'px'));
+};
 var $mdgriffith$elm_ui$Internal$Model$AsRow = {$: 'AsRow'};
 var $mdgriffith$elm_ui$Internal$Model$asRow = $mdgriffith$elm_ui$Internal$Model$AsRow;
 var $mdgriffith$elm_ui$Element$row = F2(
@@ -12360,37 +12390,8 @@ var $elm$core$List$member = F2(
 			},
 			xs);
 	});
-var $mdgriffith$elm_ui$Internal$Model$PaddingStyle = F5(
-	function (a, b, c, d, e) {
-		return {$: 'PaddingStyle', a: a, b: b, c: c, d: d, e: e};
-	});
-var $mdgriffith$elm_ui$Internal$Flag$padding = $mdgriffith$elm_ui$Internal$Flag$flag(2);
-var $mdgriffith$elm_ui$Element$padding = function (x) {
-	var f = x;
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$padding,
-		A5(
-			$mdgriffith$elm_ui$Internal$Model$PaddingStyle,
-			'p-' + $elm$core$String$fromInt(x),
-			f,
-			f,
-			f,
-			f));
-};
 var $mdgriffith$elm_ui$Internal$Flag$cursor = $mdgriffith$elm_ui$Internal$Flag$flag(21);
 var $mdgriffith$elm_ui$Element$pointer = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$cursor, $mdgriffith$elm_ui$Internal$Style$classes.cursorPointer);
-var $mdgriffith$elm_ui$Internal$Flag$borderRound = $mdgriffith$elm_ui$Internal$Flag$flag(17);
-var $mdgriffith$elm_ui$Element$Border$rounded = function (radius) {
-	return A2(
-		$mdgriffith$elm_ui$Internal$Model$StyleClass,
-		$mdgriffith$elm_ui$Internal$Flag$borderRound,
-		A3(
-			$mdgriffith$elm_ui$Internal$Model$Single,
-			'br-' + $elm$core$String$fromInt(radius),
-			'border-radius',
-			$elm$core$String$fromInt(radius) + 'px'));
-};
 var $mdgriffith$elm_ui$Internal$Model$BorderWidth = F5(
 	function (a, b, c, d, e) {
 		return {$: 'BorderWidth', a: a, b: b, c: c, d: d, e: e};
@@ -12411,24 +12412,30 @@ var $author$project$Main$tile = F3(
 	function (_v0, x, y) {
 		var actions = _v0.actions;
 		var state = _v0.state;
-		var lastState = _v0.lastState;
-		var beforeLastState = _v0.beforeLastState;
+		var lastStates = _v0.lastStates;
 		var selectedShip = _v0.selectedShip;
 		var pos = {x: x, y: y};
-		var lastShips = _Utils_ap(
-			lastState.silver,
-			_Utils_ap(
-				lastState.gold.b,
-				function () {
-					var _v7 = lastState.gold.a;
-					if (_v7.$ === 'Just') {
-						var a = _v7.a;
-						return _List_fromArray(
-							[a]);
-					} else {
-						return _List_Nil;
-					}
-				}()));
+		var lastShips = function () {
+			if (lastStates.b) {
+				var h = lastStates.a;
+				return _Utils_ap(
+					h.silver,
+					_Utils_ap(
+						h.gold.b,
+						function () {
+							var _v10 = h.gold.a;
+							if (_v10.$ === 'Just') {
+								var a = _v10.a;
+								return _List_fromArray(
+									[a]);
+							} else {
+								return _List_Nil;
+							}
+						}()));
+			} else {
+				return _List_Nil;
+			}
+		}();
 		var clickable = function () {
 			if (selectedShip.$ === 'Nothing') {
 				return A2(
@@ -12445,27 +12452,35 @@ var $author$project$Main$tile = F3(
 						$elm$core$Tuple$second,
 						A2(
 							$elm$core$List$filter,
-							function (_v6) {
-								var s = _v6.a;
+							function (_v8) {
+								var s = _v8.a;
 								return _Utils_eq(s, ship);
 							},
 							actions)));
 			}
 		}();
-		var beforeLastShips = _Utils_ap(
-			beforeLastState.silver,
-			_Utils_ap(
-				beforeLastState.gold.b,
-				function () {
-					var _v4 = beforeLastState.gold.a;
-					if (_v4.$ === 'Just') {
-						var a = _v4.a;
-						return _List_fromArray(
-							[a]);
-					} else {
-						return _List_Nil;
-					}
-				}()));
+		var beforeLastShips = function () {
+			if (lastStates.b && lastStates.b.b) {
+				var _v5 = lastStates.b;
+				var h2 = _v5.a;
+				return _Utils_ap(
+					h2.silver,
+					_Utils_ap(
+						h2.gold.b,
+						function () {
+							var _v6 = h2.gold.a;
+							if (_v6.$ === 'Just') {
+								var a = _v6.a;
+								return _List_fromArray(
+									[a]);
+							} else {
+								return _List_Nil;
+							}
+						}()));
+			} else {
+				return _List_Nil;
+			}
+		}();
 		var _v1 = state;
 		var gold = _v1.gold;
 		var silver = _v1.silver;
@@ -12562,13 +12577,6 @@ var $author$project$Main$page = function (model) {
 			_List_fromArray(
 				[
 					A2(
-					$mdgriffith$elm_ui$Element$el,
-					_List_fromArray(
-						[
-							$mdgriffith$elm_ui$Element$Events$onClick($author$project$Main$Back)
-						]),
-					$mdgriffith$elm_ui$Element$text('Back')),
-					A2(
 					$mdgriffith$elm_ui$Element$row,
 					_List_fromArray(
 						[
@@ -12641,16 +12649,29 @@ var $author$project$Main$page = function (model) {
 										},
 										A2($elm$core$List$range, 0, 10)));
 							},
-							A2($elm$core$List$range, 0, 10))))
+							A2($elm$core$List$range, 0, 10)))),
+					A2(
+					$mdgriffith$elm_ui$Element$el,
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$Events$onClick($author$project$Main$Back),
+							$mdgriffith$elm_ui$Element$Background$color(
+							A3($mdgriffith$elm_ui$Element$rgb, 1, 1, 1)),
+							$mdgriffith$elm_ui$Element$Border$rounded(10),
+							$mdgriffith$elm_ui$Element$padding(10),
+							$mdgriffith$elm_ui$Element$alignRight,
+							$mdgriffith$elm_ui$Element$Font$size(20)
+						]),
+					$mdgriffith$elm_ui$Element$text('↩'))
 				])));
 };
 var $author$project$Main$WaitedForAiMove = {$: 'WaitedForAiMove'};
 var $author$project$Main$Minimax = {$: 'Minimax'};
 var $author$project$Main$aiConfig = function (player) {
 	if (player.$ === 'Gold') {
-		return $elm$core$Maybe$Just($author$project$Main$Minimax);
-	} else {
 		return $elm$core$Maybe$Nothing;
+	} else {
+		return $elm$core$Maybe$Just($author$project$Main$Minimax);
 	}
 };
 var $author$project$Main$GotActions = function (a) {
@@ -12857,7 +12878,11 @@ var $author$project$Main$update = F2(
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{beforeLastState: model.lastState, lastState: model.state, selectedShip: $elm$core$Maybe$Nothing, state: a}),
+							{
+								lastStates: A2($elm$core$List$cons, model.state, model.lastStates),
+								selectedShip: $elm$core$Maybe$Nothing,
+								state: a
+							}),
 						$author$project$Main$getUtility(a));
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
@@ -12942,11 +12967,18 @@ var $author$project$Main$update = F2(
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				}
 			default:
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{lastState: model.beforeLastState, state: model.lastState}),
-					$author$project$Main$getActions(model.lastState));
+				var _v11 = model.lastStates;
+				if (_v11.b) {
+					var h = _v11.a;
+					var rest = _v11.b;
+					return _Utils_Tuple2(
+						_Utils_update(
+							model,
+							{lastStates: rest, state: h}),
+						$author$project$Main$getActions(h));
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
 		}
 	});
 var $author$project$Display$main = $elm$browser$Browser$document(

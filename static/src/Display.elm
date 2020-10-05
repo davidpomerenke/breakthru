@@ -35,9 +35,8 @@ init _ =
       , actions = []
       , selectedShip = Nothing
       , winner = Nothing
-      , state = emptyState
-      , lastState = emptyState
-      , beforeLastState = emptyState
+      , state = emptyState 
+      , lastStates = []
       }
     , getBoard
     )

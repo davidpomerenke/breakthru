@@ -21,10 +21,10 @@ aiConfig =
     \player ->
         case player of
             Gold ->
-                Just Minimax
+                Nothing
 
             Silver ->
-                Nothing
+                Just Minimax
 
 
 pause : Float
@@ -44,8 +44,7 @@ type alias Model =
     , selectedShip : Maybe Coordinate
     , winner : Maybe String
     , state : State
-    , lastState : State
-    , beforeLastState : State
+    , lastStates : List State
     }
 
 
@@ -74,8 +73,7 @@ init _ =
       , selectedShip = Nothing
       , winner = Nothing
       , state = emptyState
-      , lastState = emptyState
-      , beforeLastState = emptyState
+      , lastStates = []
       }
     , getInit
     )
@@ -107,8 +105,7 @@ update msg ({ state } as model) =
                 Ok a ->
                     ( { model
                         | state = a
-                        , lastState = model.state
-                        , beforeLastState = model.lastState
+                        , lastStates = model.state :: model.lastStates
                         , selectedShip = Nothing
                       }
                     , getUtility a
@@ -181,12 +178,17 @@ update msg ({ state } as model) =
                     ( model, Cmd.none )
 
         Back ->
-            ( { model
-                | state = model.lastState
-                , lastState = model.beforeLastState
-              }
-            , getActions model.lastState
-            )
+            case model.lastStates of
+                h :: rest ->
+                    ( { model
+                        | state = h
+                        , lastStates = rest
+                      }
+                    , getActions h
+                    )
+
+                _ ->
+                    ( model, Cmd.none )
 
 
 main : Program () Model Msg
@@ -272,8 +274,7 @@ page model =
         ]
         (column
             []
-            [ el [ onClick Back ] (text "Back")
-            , row
+            [ row
                 [ htmlAttribute (style "height" "100vmin")
                 , htmlAttribute (style "width" "100vmin")
                 , centerX
@@ -322,12 +323,21 @@ page model =
                                 )
                        )
                 )
+            , el
+                [ onClick Back
+                , Background.color (rgb 1 1 1)
+                , Border.rounded 10
+                , padding 10
+                , alignRight
+                , Font.size 20
+                ]
+                (text "↩")
             ]
         )
 
 
 tile : Model -> Int -> Int -> Element Msg
-tile { actions, state, lastState, beforeLastState, selectedShip } x y =
+tile { actions, state, lastStates, selectedShip } x y =
     let
         { gold, silver } =
             state
@@ -347,26 +357,36 @@ tile { actions, state, lastState, beforeLastState, selectedShip } x y =
                    )
 
         lastShips =
-            lastState.silver
-                ++ (lastState.gold |> Tuple.second)
-                ++ (case lastState.gold |> Tuple.first of
-                        Just a ->
-                            [ a ]
+            case lastStates of
+                h :: _ ->
+                    h.silver
+                        ++ (h.gold |> Tuple.second)
+                        ++ (case h.gold |> Tuple.first of
+                                Just a ->
+                                    [ a ]
 
-                        _ ->
-                            []
-                   )
+                                _ ->
+                                    []
+                           )
+
+                _ ->
+                    []
 
         beforeLastShips =
-            beforeLastState.silver
-                ++ (beforeLastState.gold |> Tuple.second)
-                ++ (case beforeLastState.gold |> Tuple.first of
-                        Just a ->
-                            [ a ]
+            case lastStates of
+                _ :: h2 :: _ ->
+                    h2.silver
+                        ++ (h2.gold |> Tuple.second)
+                        ++ (case h2.gold |> Tuple.first of
+                                Just a ->
+                                    [ a ]
 
-                        _ ->
-                            []
-                   )
+                                _ ->
+                                    []
+                           )
+
+                _ ->
+                    []
 
         pos =
             { x = x, y = y }
