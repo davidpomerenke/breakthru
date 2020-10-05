@@ -1,10 +1,11 @@
 module Main exposing (Model, Msg(..), main, page, update)
 
+import Array
 import Browser
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
-import Element.Events as Events
+import Element.Events as Events exposing (onClick)
 import Element.Font as Font
 import Html exposing (Html)
 import Html.Attributes exposing (style)
@@ -20,15 +21,15 @@ aiConfig =
     \player ->
         case player of
             Gold ->
-                Nothing
+                Just Minimax
 
             Silver ->
-                Just Minimax
+                Nothing
 
 
 pause : Float
 pause =
-    100
+    1000
 
 
 type Ai
@@ -43,6 +44,8 @@ type alias Model =
     , selectedShip : Maybe Coordinate
     , winner : Maybe String
     , state : State
+    , lastState : State
+    , beforeLastState : State
     }
 
 
@@ -53,20 +56,26 @@ type Msg
     | WaitedForAiMove
     | SelectShip (Maybe Coordinate)
     | ShowBoardAndChill (Result Http.Error State)
+    | Back
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { ai = aiConfig
-      , actions = []
-      , selectedShip = Nothing
-      , winner = Nothing
-      , state =
+    let
+        emptyState =
             { lastPlayer = Nothing
             , player = ( Gold, Nothing )
             , gold = ( Nothing, [] )
             , silver = []
             }
+    in
+    ( { ai = aiConfig
+      , actions = []
+      , selectedShip = Nothing
+      , winner = Nothing
+      , state = emptyState
+      , lastState = emptyState
+      , beforeLastState = emptyState
       }
     , getInit
     )
@@ -96,7 +105,12 @@ update msg ({ state } as model) =
         GotBoard r ->
             case r of
                 Ok a ->
-                    ( { model | state = a, selectedShip = Nothing }
+                    ( { model
+                        | state = a
+                        , lastState = model.state
+                        , beforeLastState = model.lastState
+                        , selectedShip = Nothing
+                      }
                     , getUtility a
                     )
 
@@ -165,6 +179,14 @@ update msg ({ state } as model) =
 
                 Err _ ->
                     ( model, Cmd.none )
+
+        Back ->
+            ( { model
+                | state = model.lastState
+                , lastState = model.beforeLastState
+              }
+            , getActions model.lastState
+            )
 
 
 main : Program () Model Msg
@@ -248,66 +270,103 @@ page model =
         , centerY
         , Background.color (rgba 0 0 0 0.7)
         ]
-        (row
-            [ htmlAttribute (style "height" "100vmin")
-            , htmlAttribute (style "width" "100vmin")
-            , centerX
-            , centerY
-            , Border.width 3
-            , Border.glow (rgb 0 0 0) 20
-            ]
-            ((case model.winner of
-                Nothing ->
-                    none
+        (column
+            []
+            [ el [ onClick Back ] (text "Back")
+            , row
+                [ htmlAttribute (style "height" "100vmin")
+                , htmlAttribute (style "width" "100vmin")
+                , centerX
+                , centerY
+                , Border.width 3
+                , Border.glow (rgb 0 0 0) 20
+                ]
+                ((case model.winner of
+                    Nothing ->
+                        none
 
-                Just winner_ ->
-                    el
-                        (([ style "position" "absolute"
-                          , style "z-index" "1"
-                          , style "width" "100%"
-                          , style "height" "100%"
-                          ]
-                            |> List.map htmlAttribute
-                         )
-                            ++ [ Background.color (rgba 0 0 0 0.7) ]
-                        )
-                        (el
-                            [ centerX
-                            , centerY
-                            , Font.size 100
-                            , Font.color (rgb 1 1 1)
-                            , Font.extraBold
-                            ]
-                            (text (winner_ ++ " WINS"))
-                        )
-             )
-                :: (List.range 0 10
-                        |> List.map
-                            (\x ->
-                                column
-                                    [ height fill
-                                    , width fill
-                                    ]
-                                    (List.range 0 10
-                                        |> List.map
-                                            (\y ->
-                                                tile model x y
-                                            )
-                                    )
+                    Just winner_ ->
+                        el
+                            (([ style "position" "absolute"
+                              , style "z-index" "1"
+                              , style "width" "100%"
+                              , style "height" "100%"
+                              ]
+                                |> List.map htmlAttribute
+                             )
+                                ++ [ Background.color (rgba 0 0 0 0.7) ]
                             )
-                   )
-            )
+                            (el
+                                [ centerX
+                                , centerY
+                                , Font.size 100
+                                , Font.color (rgb 1 1 1)
+                                , Font.extraBold
+                                ]
+                                (text (winner_ ++ " WINS"))
+                            )
+                 )
+                    :: (List.range 0 10
+                            |> List.map
+                                (\x ->
+                                    column
+                                        [ height fill
+                                        , width fill
+                                        ]
+                                        (List.range 0 10
+                                            |> List.map
+                                                (\y ->
+                                                    tile model x y
+                                                )
+                                        )
+                                )
+                       )
+                )
+            ]
         )
 
 
 tile : Model -> Int -> Int -> Element Msg
-tile { actions, state, selectedShip } x y =
+tile { actions, state, lastState, beforeLastState, selectedShip } x y =
     let
         { gold, silver } =
             state
 
         ( flagship, rest ) =
             gold
+
+        currentShips =
+            silver
+                ++ (gold |> Tuple.second)
+                ++ (case gold |> Tuple.first of
+                        Just a ->
+                            [ a ]
+
+                        _ ->
+                            []
+                   )
+
+        lastShips =
+            lastState.silver
+                ++ (lastState.gold |> Tuple.second)
+                ++ (case lastState.gold |> Tuple.first of
+                        Just a ->
+                            [ a ]
+
+                        _ ->
+                            []
+                   )
+
+        beforeLastShips =
+            beforeLastState.silver
+                ++ (beforeLastState.gold |> Tuple.second)
+                ++ (case beforeLastState.gold |> Tuple.first of
+                        Just a ->
+                            [ a ]
+
+                        _ ->
+                            []
+                   )
 
         pos =
             { x = x, y = y }
@@ -320,6 +379,22 @@ tile { actions, state, selectedShip } x y =
 
         silver_ =
             List.member pos silver
+
+        changed =
+            (List.member pos lastShips
+                && not (List.member pos currentShips)
+            )
+                || ((not <| List.member pos lastShips)
+                        && List.member pos currentShips
+                   )
+
+        changedPrev =
+            (List.member pos beforeLastShips
+                && not (List.member pos currentShips)
+            )
+                || ((not <| List.member pos beforeLastShips)
+                        && List.member pos currentShips
+                   )
 
         clickable =
             case selectedShip of
@@ -343,6 +418,12 @@ tile { actions, state, selectedShip } x y =
          , Background.color
             (if clickable then
                 rgb 0.2 0.6 0.4
+
+             else if changed then
+                rgb 0.5 0.4 0.2
+
+             else if changedPrev then
+                rgb 0.6 0.5 0.3
 
              else
                 rgb 0.7 0.6 0.4
@@ -393,8 +474,22 @@ tile { actions, state, selectedShip } x y =
                         rgba 1 1 1 0
                     )
                 ]
-                (text "")
+                (label x y)
 
          else
-            text ""
+            label x y
+        )
+
+
+label x y =
+    el [ Font.color (rgba 1 1 1 0.2) ]
+        (text
+            ((Array.get x
+                (Array.fromList
+                    [ "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K" ]
+                )
+                |> Maybe.withDefault ""
+             )
+                ++ String.fromInt (11 - y)
+            )
         )

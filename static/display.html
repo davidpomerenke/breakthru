@@ -6276,25 +6276,29 @@ var $author$project$Display$getBoard = $elm$http$Http$post(
 		url: '/display'
 	});
 var $author$project$Display$init = function (_v0) {
+	var emptyState = {
+		gold: _Utils_Tuple2($elm$core$Maybe$Nothing, _List_Nil),
+		lastPlayer: $elm$core$Maybe$Nothing,
+		player: _Utils_Tuple2($author$project$Model$Gold, $elm$core$Maybe$Nothing),
+		silver: _List_Nil
+	};
 	return _Utils_Tuple2(
 		{
 			actions: _List_Nil,
 			ai: function (_v1) {
 				return $elm$core$Maybe$Nothing;
 			},
+			beforeLastState: emptyState,
+			lastState: emptyState,
 			selectedShip: $elm$core$Maybe$Nothing,
-			state: {
-				gold: _Utils_Tuple2($elm$core$Maybe$Nothing, _List_Nil),
-				lastPlayer: $elm$core$Maybe$Nothing,
-				player: _Utils_Tuple2($author$project$Model$Gold, $elm$core$Maybe$Nothing),
-				silver: _List_Nil
-			},
+			state: emptyState,
 			winner: $elm$core$Maybe$Nothing
 		},
 		$author$project$Display$getBoard);
 };
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
+var $author$project$Main$Back = {$: 'Back'};
 var $mdgriffith$elm_ui$Internal$Model$AlignX = function (a) {
 	return {$: 'AlignX', a: a};
 };
@@ -12153,6 +12157,29 @@ var $mdgriffith$elm_ui$Element$layout = $mdgriffith$elm_ui$Element$layoutWith(
 	{options: _List_Nil});
 var $mdgriffith$elm_ui$Internal$Model$Empty = {$: 'Empty'};
 var $mdgriffith$elm_ui$Element$none = $mdgriffith$elm_ui$Internal$Model$Empty;
+var $elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var $elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
+};
+var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var $elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var $elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'click',
+		$elm$json$Json$Decode$succeed(msg));
+};
+var $mdgriffith$elm_ui$Element$Events$onClick = A2($elm$core$Basics$composeL, $mdgriffith$elm_ui$Internal$Model$Attr, $elm$html$Html$Events$onClick);
 var $mdgriffith$elm_ui$Element$rgb = F3(
 	function (r, g, b) {
 		return A4($mdgriffith$elm_ui$Internal$Model$Rgba, r, g, b, 1);
@@ -12228,6 +12255,102 @@ var $mdgriffith$elm_ui$Element$Border$innerGlow = F2(
 				size: size
 			});
 	});
+var $elm$core$Array$fromListHelp = F3(
+	function (list, nodeList, nodeListSize) {
+		fromListHelp:
+		while (true) {
+			var _v0 = A2($elm$core$Elm$JsArray$initializeFromList, $elm$core$Array$branchFactor, list);
+			var jsArray = _v0.a;
+			var remainingItems = _v0.b;
+			if (_Utils_cmp(
+				$elm$core$Elm$JsArray$length(jsArray),
+				$elm$core$Array$branchFactor) < 0) {
+				return A2(
+					$elm$core$Array$builderToArray,
+					true,
+					{nodeList: nodeList, nodeListSize: nodeListSize, tail: jsArray});
+			} else {
+				var $temp$list = remainingItems,
+					$temp$nodeList = A2(
+					$elm$core$List$cons,
+					$elm$core$Array$Leaf(jsArray),
+					nodeList),
+					$temp$nodeListSize = nodeListSize + 1;
+				list = $temp$list;
+				nodeList = $temp$nodeList;
+				nodeListSize = $temp$nodeListSize;
+				continue fromListHelp;
+			}
+		}
+	});
+var $elm$core$Array$fromList = function (list) {
+	if (!list.b) {
+		return $elm$core$Array$empty;
+	} else {
+		return A3($elm$core$Array$fromListHelp, list, _List_Nil, 0);
+	}
+};
+var $elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
+var $elm$core$Array$bitMask = 4294967295 >>> (32 - $elm$core$Array$shiftStep);
+var $elm$core$Elm$JsArray$unsafeGet = _JsArray_unsafeGet;
+var $elm$core$Array$getHelp = F3(
+	function (shift, index, tree) {
+		getHelp:
+		while (true) {
+			var pos = $elm$core$Array$bitMask & (index >>> shift);
+			var _v0 = A2($elm$core$Elm$JsArray$unsafeGet, pos, tree);
+			if (_v0.$ === 'SubTree') {
+				var subTree = _v0.a;
+				var $temp$shift = shift - $elm$core$Array$shiftStep,
+					$temp$index = index,
+					$temp$tree = subTree;
+				shift = $temp$shift;
+				index = $temp$index;
+				tree = $temp$tree;
+				continue getHelp;
+			} else {
+				var values = _v0.a;
+				return A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, values);
+			}
+		}
+	});
+var $elm$core$Array$tailIndex = function (len) {
+	return (len >>> 5) << 5;
+};
+var $elm$core$Array$get = F2(
+	function (index, _v0) {
+		var len = _v0.a;
+		var startShift = _v0.b;
+		var tree = _v0.c;
+		var tail = _v0.d;
+		return ((index < 0) || (_Utils_cmp(index, len) > -1)) ? $elm$core$Maybe$Nothing : ((_Utils_cmp(
+			index,
+			$elm$core$Array$tailIndex(len)) > -1) ? $elm$core$Maybe$Just(
+			A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, tail)) : $elm$core$Maybe$Just(
+			A3($elm$core$Array$getHelp, startShift, index, tree)));
+	});
+var $author$project$Main$label = F2(
+	function (x, y) {
+		return A2(
+			$mdgriffith$elm_ui$Element$el,
+			_List_fromArray(
+				[
+					$mdgriffith$elm_ui$Element$Font$color(
+					A4($mdgriffith$elm_ui$Element$rgba, 1, 1, 1, 0.2))
+				]),
+			$mdgriffith$elm_ui$Element$text(
+				_Utils_ap(
+					A2(
+						$elm$core$Maybe$withDefault,
+						'',
+						A2(
+							$elm$core$Array$get,
+							x,
+							$elm$core$Array$fromList(
+								_List_fromArray(
+									['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'])))),
+					$elm$core$String$fromInt(11 - y))));
+	});
 var $elm$core$List$member = F2(
 	function (x, xs) {
 		return A2(
@@ -12237,29 +12360,6 @@ var $elm$core$List$member = F2(
 			},
 			xs);
 	});
-var $elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
-	});
-var $elm$virtual_dom$VirtualDom$Normal = function (a) {
-	return {$: 'Normal', a: a};
-};
-var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
-var $elm$html$Html$Events$on = F2(
-	function (event, decoder) {
-		return A2(
-			$elm$virtual_dom$VirtualDom$on,
-			event,
-			$elm$virtual_dom$VirtualDom$Normal(decoder));
-	});
-var $elm$html$Html$Events$onClick = function (msg) {
-	return A2(
-		$elm$html$Html$Events$on,
-		'click',
-		$elm$json$Json$Decode$succeed(msg));
-};
-var $mdgriffith$elm_ui$Element$Events$onClick = A2($elm$core$Basics$composeL, $mdgriffith$elm_ui$Internal$Model$Attr, $elm$html$Html$Events$onClick);
 var $mdgriffith$elm_ui$Internal$Model$PaddingStyle = F5(
 	function (a, b, c, d, e) {
 		return {$: 'PaddingStyle', a: a, b: b, c: c, d: d, e: e};
@@ -12311,8 +12411,24 @@ var $author$project$Main$tile = F3(
 	function (_v0, x, y) {
 		var actions = _v0.actions;
 		var state = _v0.state;
+		var lastState = _v0.lastState;
+		var beforeLastState = _v0.beforeLastState;
 		var selectedShip = _v0.selectedShip;
 		var pos = {x: x, y: y};
+		var lastShips = _Utils_ap(
+			lastState.silver,
+			_Utils_ap(
+				lastState.gold.b,
+				function () {
+					var _v7 = lastState.gold.a;
+					if (_v7.$ === 'Just') {
+						var a = _v7.a;
+						return _List_fromArray(
+							[a]);
+					} else {
+						return _List_Nil;
+					}
+				}()));
 		var clickable = function () {
 			if (selectedShip.$ === 'Nothing') {
 				return A2(
@@ -12329,16 +12445,46 @@ var $author$project$Main$tile = F3(
 						$elm$core$Tuple$second,
 						A2(
 							$elm$core$List$filter,
-							function (_v4) {
-								var s = _v4.a;
+							function (_v6) {
+								var s = _v6.a;
 								return _Utils_eq(s, ship);
 							},
 							actions)));
 			}
 		}();
+		var beforeLastShips = _Utils_ap(
+			beforeLastState.silver,
+			_Utils_ap(
+				beforeLastState.gold.b,
+				function () {
+					var _v4 = beforeLastState.gold.a;
+					if (_v4.$ === 'Just') {
+						var a = _v4.a;
+						return _List_fromArray(
+							[a]);
+					} else {
+						return _List_Nil;
+					}
+				}()));
 		var _v1 = state;
 		var gold = _v1.gold;
 		var silver = _v1.silver;
+		var currentShips = _Utils_ap(
+			silver,
+			_Utils_ap(
+				gold.b,
+				function () {
+					var _v3 = gold.a;
+					if (_v3.$ === 'Just') {
+						var a = _v3.a;
+						return _List_fromArray(
+							[a]);
+					} else {
+						return _List_Nil;
+					}
+				}()));
+		var changed = (A2($elm$core$List$member, pos, lastShips) && (!A2($elm$core$List$member, pos, currentShips))) || ((!A2($elm$core$List$member, pos, lastShips)) && A2($elm$core$List$member, pos, currentShips));
+		var changedPrev = (A2($elm$core$List$member, pos, beforeLastShips) && (!A2($elm$core$List$member, pos, currentShips))) || ((!A2($elm$core$List$member, pos, beforeLastShips)) && A2($elm$core$List$member, pos, currentShips));
 		var silver_ = A2($elm$core$List$member, pos, silver);
 		var _v2 = gold;
 		var flagship = _v2.a;
@@ -12362,7 +12508,7 @@ var $author$project$Main$tile = F3(
 						A4($mdgriffith$elm_ui$Element$rgba, 0.2, 0.2, 0.1, 0.3),
 						20),
 						$mdgriffith$elm_ui$Element$Background$color(
-						clickable ? A3($mdgriffith$elm_ui$Element$rgb, 0.2, 0.6, 0.4) : A3($mdgriffith$elm_ui$Element$rgb, 0.7, 0.6, 0.4)),
+						clickable ? A3($mdgriffith$elm_ui$Element$rgb, 0.2, 0.6, 0.4) : (changed ? A3($mdgriffith$elm_ui$Element$rgb, 0.5, 0.4, 0.2) : (changedPrev ? A3($mdgriffith$elm_ui$Element$rgb, 0.6, 0.5, 0.3) : A3($mdgriffith$elm_ui$Element$rgb, 0.7, 0.6, 0.4)))),
 						$mdgriffith$elm_ui$Element$padding(10)
 					]),
 				clickable ? _List_fromArray(
@@ -12398,7 +12544,7 @@ var $author$project$Main$tile = F3(
 						$mdgriffith$elm_ui$Element$Background$color(
 						flagship_ ? A3($mdgriffith$elm_ui$Element$rgb, 1, 1, 0) : (gold_ ? A3($mdgriffith$elm_ui$Element$rgb, 1, 1, 0) : (silver_ ? A3($mdgriffith$elm_ui$Element$rgb, 0.8, 0.9, 0.9) : A4($mdgriffith$elm_ui$Element$rgba, 1, 1, 1, 0))))
 					]),
-				$mdgriffith$elm_ui$Element$text('')) : $mdgriffith$elm_ui$Element$text(''));
+				A2($author$project$Main$label, x, y)) : A2($author$project$Main$label, x, y));
 	});
 var $author$project$Main$page = function (model) {
 	return A2(
@@ -12411,87 +12557,100 @@ var $author$project$Main$page = function (model) {
 				A4($mdgriffith$elm_ui$Element$rgba, 0, 0, 0, 0.7))
 			]),
 		A2(
-			$mdgriffith$elm_ui$Element$row,
+			$mdgriffith$elm_ui$Element$column,
+			_List_Nil,
 			_List_fromArray(
 				[
-					$mdgriffith$elm_ui$Element$htmlAttribute(
-					A2($elm$html$Html$Attributes$style, 'height', '100vmin')),
-					$mdgriffith$elm_ui$Element$htmlAttribute(
-					A2($elm$html$Html$Attributes$style, 'width', '100vmin')),
-					$mdgriffith$elm_ui$Element$centerX,
-					$mdgriffith$elm_ui$Element$centerY,
-					$mdgriffith$elm_ui$Element$Border$width(3),
 					A2(
-					$mdgriffith$elm_ui$Element$Border$glow,
-					A3($mdgriffith$elm_ui$Element$rgb, 0, 0, 0),
-					20)
-				]),
-			A2(
-				$elm$core$List$cons,
-				function () {
-					var _v0 = model.winner;
-					if (_v0.$ === 'Nothing') {
-						return $mdgriffith$elm_ui$Element$none;
-					} else {
-						var winner_ = _v0.a;
-						return A2(
-							$mdgriffith$elm_ui$Element$el,
-							_Utils_ap(
-								A2(
-									$elm$core$List$map,
-									$mdgriffith$elm_ui$Element$htmlAttribute,
+					$mdgriffith$elm_ui$Element$el,
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$Events$onClick($author$project$Main$Back)
+						]),
+					$mdgriffith$elm_ui$Element$text('Back')),
+					A2(
+					$mdgriffith$elm_ui$Element$row,
+					_List_fromArray(
+						[
+							$mdgriffith$elm_ui$Element$htmlAttribute(
+							A2($elm$html$Html$Attributes$style, 'height', '100vmin')),
+							$mdgriffith$elm_ui$Element$htmlAttribute(
+							A2($elm$html$Html$Attributes$style, 'width', '100vmin')),
+							$mdgriffith$elm_ui$Element$centerX,
+							$mdgriffith$elm_ui$Element$centerY,
+							$mdgriffith$elm_ui$Element$Border$width(3),
+							A2(
+							$mdgriffith$elm_ui$Element$Border$glow,
+							A3($mdgriffith$elm_ui$Element$rgb, 0, 0, 0),
+							20)
+						]),
+					A2(
+						$elm$core$List$cons,
+						function () {
+							var _v0 = model.winner;
+							if (_v0.$ === 'Nothing') {
+								return $mdgriffith$elm_ui$Element$none;
+							} else {
+								var winner_ = _v0.a;
+								return A2(
+									$mdgriffith$elm_ui$Element$el,
+									_Utils_ap(
+										A2(
+											$elm$core$List$map,
+											$mdgriffith$elm_ui$Element$htmlAttribute,
+											_List_fromArray(
+												[
+													A2($elm$html$Html$Attributes$style, 'position', 'absolute'),
+													A2($elm$html$Html$Attributes$style, 'z-index', '1'),
+													A2($elm$html$Html$Attributes$style, 'width', '100%'),
+													A2($elm$html$Html$Attributes$style, 'height', '100%')
+												])),
+										_List_fromArray(
+											[
+												$mdgriffith$elm_ui$Element$Background$color(
+												A4($mdgriffith$elm_ui$Element$rgba, 0, 0, 0, 0.7))
+											])),
+									A2(
+										$mdgriffith$elm_ui$Element$el,
+										_List_fromArray(
+											[
+												$mdgriffith$elm_ui$Element$centerX,
+												$mdgriffith$elm_ui$Element$centerY,
+												$mdgriffith$elm_ui$Element$Font$size(100),
+												$mdgriffith$elm_ui$Element$Font$color(
+												A3($mdgriffith$elm_ui$Element$rgb, 1, 1, 1)),
+												$mdgriffith$elm_ui$Element$Font$extraBold
+											]),
+										$mdgriffith$elm_ui$Element$text(winner_ + ' WINS')));
+							}
+						}(),
+						A2(
+							$elm$core$List$map,
+							function (x) {
+								return A2(
+									$mdgriffith$elm_ui$Element$column,
 									_List_fromArray(
 										[
-											A2($elm$html$Html$Attributes$style, 'position', 'absolute'),
-											A2($elm$html$Html$Attributes$style, 'z-index', '1'),
-											A2($elm$html$Html$Attributes$style, 'width', '100%'),
-											A2($elm$html$Html$Attributes$style, 'height', '100%')
-										])),
-								_List_fromArray(
-									[
-										$mdgriffith$elm_ui$Element$Background$color(
-										A4($mdgriffith$elm_ui$Element$rgba, 0, 0, 0, 0.7))
-									])),
-							A2(
-								$mdgriffith$elm_ui$Element$el,
-								_List_fromArray(
-									[
-										$mdgriffith$elm_ui$Element$centerX,
-										$mdgriffith$elm_ui$Element$centerY,
-										$mdgriffith$elm_ui$Element$Font$size(100),
-										$mdgriffith$elm_ui$Element$Font$color(
-										A3($mdgriffith$elm_ui$Element$rgb, 1, 1, 1)),
-										$mdgriffith$elm_ui$Element$Font$extraBold
-									]),
-								$mdgriffith$elm_ui$Element$text(winner_ + ' WINS')));
-					}
-				}(),
-				A2(
-					$elm$core$List$map,
-					function (x) {
-						return A2(
-							$mdgriffith$elm_ui$Element$column,
-							_List_fromArray(
-								[
-									$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
-									$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
-								]),
-							A2(
-								$elm$core$List$map,
-								function (y) {
-									return A3($author$project$Main$tile, model, x, y);
-								},
-								A2($elm$core$List$range, 0, 10)));
-					},
-					A2($elm$core$List$range, 0, 10)))));
+											$mdgriffith$elm_ui$Element$height($mdgriffith$elm_ui$Element$fill),
+											$mdgriffith$elm_ui$Element$width($mdgriffith$elm_ui$Element$fill)
+										]),
+									A2(
+										$elm$core$List$map,
+										function (y) {
+											return A3($author$project$Main$tile, model, x, y);
+										},
+										A2($elm$core$List$range, 0, 10)));
+							},
+							A2($elm$core$List$range, 0, 10))))
+				])));
 };
 var $author$project$Main$WaitedForAiMove = {$: 'WaitedForAiMove'};
 var $author$project$Main$Minimax = {$: 'Minimax'};
 var $author$project$Main$aiConfig = function (player) {
 	if (player.$ === 'Gold') {
-		return $elm$core$Maybe$Nothing;
-	} else {
 		return $elm$core$Maybe$Just($author$project$Main$Minimax);
+	} else {
+		return $elm$core$Maybe$Nothing;
 	}
 };
 var $author$project$Main$GotActions = function (a) {
@@ -12671,7 +12830,7 @@ var $author$project$Main$getUtility = function (state) {
 };
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $author$project$Main$pause = 100;
+var $author$project$Main$pause = 1000;
 var $elm$core$Process$sleep = _Process_sleep;
 var $author$project$Main$update = F2(
 	function (msg, model) {
@@ -12698,7 +12857,7 @@ var $author$project$Main$update = F2(
 					return _Utils_Tuple2(
 						_Utils_update(
 							model,
-							{selectedShip: $elm$core$Maybe$Nothing, state: a}),
+							{beforeLastState: model.lastState, lastState: model.state, selectedShip: $elm$core$Maybe$Nothing, state: a}),
 						$author$project$Main$getUtility(a));
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
@@ -12770,7 +12929,7 @@ var $author$project$Main$update = F2(
 							return $elm$core$Platform$Cmd$none;
 						}
 					}());
-			default:
+			case 'ShowBoardAndChill':
 				var r = msg.a;
 				if (r.$ === 'Ok') {
 					var a = r.a;
@@ -12782,6 +12941,12 @@ var $author$project$Main$update = F2(
 				} else {
 					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				}
+			default:
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{lastState: model.beforeLastState, state: model.lastState}),
+					$author$project$Main$getActions(model.lastState));
 		}
 	});
 var $author$project$Display$main = $elm$browser$Browser$document(

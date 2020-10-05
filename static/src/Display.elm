@@ -23,16 +23,21 @@ main =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
+    let
+        emptyState =
+            { lastPlayer = Nothing
+            , player = ( Gold, Nothing )
+            , gold = ( Nothing, [] )
+            , silver = []
+            }
+    in
     ( { ai = \_ -> Nothing
       , actions = []
       , selectedShip = Nothing
       , winner = Nothing
-      , state =
-            { lastPlayer = Nothing
-            , player = (Gold, Nothing)
-            , gold = ( Nothing, [] )
-            , silver = []
-            } 
+      , state = emptyState
+      , lastState = emptyState
+      , beforeLastState = emptyState
       }
     , getBoard
     )
