@@ -1,4 +1,4 @@
-module Main exposing (main, Model, Msg(..), update, page)
+module Main exposing (Model, Msg(..), main, page, update)
 
 import Browser
 import Element exposing (..)
@@ -63,7 +63,7 @@ init _ =
       , winner = Nothing
       , state =
             { lastPlayer = Nothing
-            , player = Gold
+            , player = ( Gold, Nothing )
             , gold = ( Nothing, [] )
             , silver = []
             }
@@ -74,6 +74,10 @@ init _ =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg ({ state } as model) =
+    let
+        ( player_, _ ) =
+            state.player
+    in
     case msg of
         GotActions r ->
             case r of
@@ -113,7 +117,7 @@ update msg ({ state } as model) =
                             else
                                 Nothing
                       }
-                    , case model.ai model.state.player of
+                    , case model.ai player_ of
                         Just _ ->
                             Process.sleep pause |> Task.perform (\_ -> WaitedForAiMove)
 
@@ -144,7 +148,7 @@ update msg ({ state } as model) =
 
         WaitedForAiMove ->
             ( model
-            , case aiConfig model.state.player of
+            , case aiConfig player_ of
                 Just ai ->
                     getAiMove ai model.state
 
@@ -161,7 +165,6 @@ update msg ({ state } as model) =
 
                 Err _ ->
                     ( model, Cmd.none )
-        
 
 
 main : Program () Model Msg

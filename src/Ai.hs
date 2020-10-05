@@ -10,7 +10,7 @@ import Data.Maybe (catMaybes, fromMaybe)
 import Debug.Trace
 import Flow ((|>))
 import Game
-import System.Random (StdGen, mkStdGen, randomR, split)
+import System.Random (StdGen, randomR, split)
 import Prelude hiding (foldl1, (!!))
 
 type Ai = State -> Maybe Action
@@ -26,7 +26,7 @@ maxLength :: Player -> Int
 maxLength player =
   case player of
     Gold -> 12
-    Silver -> 20
+    Silver -> 20 
 
 heuristic :: State -> Player -> Utility
 heuristic state player =
@@ -37,7 +37,7 @@ heuristic state player =
    in Utility (fleet1 / maxFleet1 - fleet2 / maxFleet2)
 
 max :: StdGen -> Ai
-max g state@State {gold, player} =
+max g state@State {player = (player, _)} =
   let Game {actions, result, utility} = breakthru
       bestActions =
         actions state
@@ -67,7 +67,7 @@ minimax :: Int -> StdGen -> Ai
 minimax depth g state = innerMiniMax depth g state |> fmap fst
 
 innerMiniMax :: Int -> StdGen -> State -> Maybe (Action, Player -> Utility)
-innerMiniMax depth g state@State {gold, player} =
+innerMiniMax depth g state@State {player = (player, _)} =
   let (g1, g2) = split g
       map_ = map --if depth >= 2 then parMap rpar else map
       Game {actions, result, utility} = breakthru

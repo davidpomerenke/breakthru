@@ -5,7 +5,6 @@
 module Game where
 
 import Data.Aeson (FromJSON, ToJSON)
-import Data.List ((\\))
 import Data.Maybe (fromMaybe)
 import Flow ((<|), (|>))
 import GHC.Generics (Generic)
@@ -34,7 +33,7 @@ data Game = Game
 -- | Type for the breakthru game state.
 data State = State
   { lastPlayer :: Maybe Player,
-    player :: Player,
+    player :: (Player, Maybe Coordinate {- of first move -}),
     gold :: (Maybe Coordinate, [Coordinate]),
     silver :: [Coordinate]
   }
@@ -77,7 +76,7 @@ initial_ :: State
 initial_ =
   State
     { lastPlayer = Nothing,
-      player = Gold,
+      player = (Gold, Nothing),
       gold =
         ( Just Coordinate {x = 5, y = 5},
           [ (3, 4),
@@ -121,7 +120,7 @@ initial_ =
     }
 
 actions_ :: State -> [Action]
-actions_ (state@State {player}) =
+actions_ (state@State {player = (player, _)}) =
   case utility_ state of
     Nothing ->
       fleetOfPlayer player state
@@ -135,8 +134,8 @@ actions_ (state@State {player}) =
 
 -- | Moves from a specific origin given a game state.
 moves :: Coordinate -> State -> [Coordinate]
-moves (start@Coordinate {x, y}) state@State {player, lastPlayer, gold = (flagship, _)} =
-  if flagship /= Just start || lastPlayer /= Just player
+moves (start@Coordinate {x, y}) state@State {player = (player, frozen), lastPlayer, gold = (flagship, _)} =
+  if (flagship /= Just start || lastPlayer /= Just player) && Just start /= frozen
     then
       ( if lastPlayer /= Just player
           then -- capturing moves
@@ -160,7 +159,7 @@ moves (start@Coordinate {x, y}) state@State {player, lastPlayer, gold = (flagshi
 
 result_ :: State -> Action -> Maybe State
 result_ =
-  \state@State {player, lastPlayer, gold = (flagship, rest), silver}
+  \state@State {player = (player, _), lastPlayer, gold = (flagship, rest), silver}
    ( origin@Coordinate {x = x1, y = y1},
      end@Coordinate {x = x2, y = y2}
      ) ->
@@ -177,8 +176,8 @@ result_ =
                       player =
                         if lastPlayer == Just player
                           || flagship == Just origin
-                          then other player
-                          else player,
+                          then (other player, Nothing)
+                          else (player, Just end),
                       gold =
                         case player of
                           Gold ->
@@ -202,7 +201,7 @@ result_ =
                 Just
                   State
                     { lastPlayer = Just player,
-                      player = other player,
+                      player = (other player, Nothing),
                       gold =
                         case player of
                           Gold ->

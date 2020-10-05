@@ -29,10 +29,10 @@ init _ =
       , winner = Nothing
       , state =
             { lastPlayer = Nothing
-            , player = Gold
+            , player = (Gold, Nothing)
             , gold = ( Nothing, [] )
             , silver = []
-            }
+            } 
       }
     , getBoard
     )

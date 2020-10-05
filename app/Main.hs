@@ -5,9 +5,8 @@ module Main where
 
 import Ai
 import Control.Monad (join)
-import Data.Aeson (FromJSON, ToJSON, decode, encode)
-import Data.ByteString.Lazy (ByteString, append, fromStrict, pack)
-import Data.Function ((&))
+import Data.Aeson (decode, encode)
+import Data.ByteString.Lazy (fromStrict)
 import Data.Maybe (fromMaybe)
 import Debug.Trace
 import Evaluate
@@ -17,14 +16,13 @@ import Network.HTTP.Types (status200, status400)
 import Network.Wai
   ( Application,
     Request (rawPathInfo, requestMethod),
-    Response (..),
     getRequestBodyChunk,
     responseFile,
     responseLBS,
   )
 import Network.Wai.Handler.Warp (run)
-import System.Environment
-import System.Random (StdGen, mkStdGen)
+import System.Environment ( getArgs )
+import System.Random (mkStdGen)
 import Web.Browser (openBrowser)
 
 -- | Main function. Plug in `serve` (for playing in the browser) or `compete` here, depending on what mode you want the program to start in.
@@ -156,7 +154,7 @@ displayedState :: State
 displayedState =
   State
     { lastPlayer = Just Silver,
-      player = Gold,
+      player = (Gold, Nothing),
       gold =
         ( Just (Coordinate {x = 4, y = 4}),
           [ Coordinate {x = 9, y = 8},

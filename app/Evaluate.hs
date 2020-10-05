@@ -12,7 +12,7 @@ import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Vector (fromList)
 import Debug.Trace
-import Flow ((|>))
+import Flow ((<|), (|>))
 import GHC.Float (float2Double, int2Double)
 import GHC.Generics (Generic)
 import Game
@@ -83,8 +83,8 @@ playOften ais =
 
 -- | Play a game to the end. Takes a random number generator, a specification of a (possibly random-number-generator dependent) AI for each player, the history of states, and the current states. Returns the utility of player Gold and the history of states.
 play :: StdGen -> (Player -> StdGen -> Ai) -> [State] -> State -> (Utility, [State])
-play g ai history state =
-  let Game {initial, actions, result, utility} = breakthru
+play g ai history state@State{player = (player, _)} =
+  let Game {result, utility} = breakthru
    in case utility state of
         Just f ->
           (f Gold, reverse history)
@@ -94,7 +94,7 @@ play g ai history state =
                 g2
                 ai
                 (state : history)
-                ( (ai (player state) g1 state)
+                ( (ai player g1 state)
                     |> fmap (result state)
                     |> (\a -> if a == Nothing || a == Just Nothing then traceShow state a else a)
                     |> join

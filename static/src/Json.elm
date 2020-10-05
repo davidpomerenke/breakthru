@@ -44,6 +44,13 @@ toMaybePlayer p =
             D.succeed Nothing
 
 
+decodePlayer : D.Decoder ( Player, Maybe Coordinate )
+decodePlayer =
+    D.map2 Tuple.pair
+        (D.index 0 (D.string |> D.andThen toPlayer))
+        (D.index 1 (D.nullable decodeCoordinate))
+
+
 toPlayer : String -> D.Decoder Player
 toPlayer p =
     if p == "Gold" then
@@ -72,7 +79,7 @@ decodeState : D.Decoder State
 decodeState =
     D.succeed State
         |> required "lastPlayer" (D.nullable D.string |> D.andThen toMaybePlayer)
-        |> required "player" (D.string |> D.andThen toPlayer)
+        |> required "player" decodePlayer
         |> required "gold" decodeGold
         |> required "silver" (D.list decodeCoordinate)
 
@@ -112,8 +119,8 @@ encodePlayer player =
             E.null
 
 
-encodeFlagship : Maybe Coordinate -> E.Value
-encodeFlagship flagship =
+encodeMaybeCoordinate : Maybe Coordinate -> E.Value
+encodeMaybeCoordinate flagship =
     case flagship of
         Just coordinate ->
             encodeCoordinate coordinate
@@ -127,10 +134,13 @@ encodeState { lastPlayer, player, gold, silver } =
     let
         ( flagship, rest ) =
             gold
+
+        ( player_, coord ) =
+            player
     in
     E.object
         [ ( "lastPlayer", encodePlayer lastPlayer )
-        , ( "player", encodePlayer (Just player) )
-        , ( "gold", E.list identity [ encodeFlagship flagship, E.list encodeCoordinate rest ] )
+        , ( "player", E.list identity [ encodePlayer (Just player_), encodeMaybeCoordinate coord ] )
+        , ( "gold", E.list identity [ encodeMaybeCoordinate flagship, E.list encodeCoordinate rest ] )
         , ( "silver", E.list encodeCoordinate silver )
         ]
