@@ -21,15 +21,15 @@ aiConfig =
     \player ->
         case player of
             Gold ->
-                Nothing
+                Just Minimax
 
             Silver ->
-                Just Minimax
+                Just Random
 
 
 pause : Float
 pause =
-    1000
+    10
 
 
 type Ai

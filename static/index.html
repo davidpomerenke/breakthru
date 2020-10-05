@@ -5372,11 +5372,12 @@ var $elm$core$Task$perform = F2(
 var $elm$browser$Browser$document = _Browser_document;
 var $author$project$Model$Gold = {$: 'Gold'};
 var $author$project$Main$Minimax = {$: 'Minimax'};
+var $author$project$Main$Random = {$: 'Random'};
 var $author$project$Main$aiConfig = function (player) {
 	if (player.$ === 'Gold') {
-		return $elm$core$Maybe$Nothing;
-	} else {
 		return $elm$core$Maybe$Just($author$project$Main$Minimax);
+	} else {
+		return $elm$core$Maybe$Just($author$project$Main$Random);
 	}
 };
 var $author$project$Main$GotBoard = function (a) {
@@ -12839,7 +12840,7 @@ var $author$project$Main$getUtility = function (state) {
 };
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $author$project$Main$pause = 1000;
+var $author$project$Main$pause = 10;
 var $elm$core$Process$sleep = _Process_sleep;
 var $author$project$Main$update = F2(
 	function (msg, model) {
