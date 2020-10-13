@@ -117,18 +117,6 @@ app file request respond =
                           |> encode
                       )
                   _ -> fail
-              | rawPathInfo request == "/ai/max" ->
-                case decode $ fromStrict body of
-                  Just state ->
-                    responseLBS
-                      status200
-                      [("Content-Type", "text/plain")]
-                      ( Ai.max (mkStdGen 137) state |> fmap (result state)
-                          |> join
-                          |> fromMaybe state
-                          |> encode
-                      )
-                  _ -> fail
               | rawPathInfo request == "/ai/minimax" ->
                 case decode $ fromStrict body of
                   Just state ->

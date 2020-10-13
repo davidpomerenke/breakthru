@@ -5372,12 +5372,11 @@ var $elm$core$Task$perform = F2(
 var $elm$browser$Browser$document = _Browser_document;
 var $author$project$Model$Gold = {$: 'Gold'};
 var $author$project$Main$Minimax = {$: 'Minimax'};
-var $author$project$Main$Random = {$: 'Random'};
 var $author$project$Main$aiConfig = function (player) {
 	if (player.$ === 'Gold') {
 		return $elm$core$Maybe$Just($author$project$Main$Minimax);
 	} else {
-		return $elm$core$Maybe$Just($author$project$Main$Random);
+		return $elm$core$Maybe$Nothing;
 	}
 };
 var $author$project$Main$GotBoard = function (a) {
@@ -12199,6 +12198,8 @@ var $mdgriffith$elm_ui$Element$padding = function (x) {
 			f,
 			f));
 };
+var $mdgriffith$elm_ui$Internal$Flag$cursor = $mdgriffith$elm_ui$Internal$Flag$flag(21);
+var $mdgriffith$elm_ui$Element$pointer = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$cursor, $mdgriffith$elm_ui$Internal$Style$classes.cursorPointer);
 var $mdgriffith$elm_ui$Element$rgb = F3(
 	function (r, g, b) {
 		return A4($mdgriffith$elm_ui$Internal$Model$Rgba, r, g, b, 1);
@@ -12390,8 +12391,6 @@ var $elm$core$List$member = F2(
 			},
 			xs);
 	});
-var $mdgriffith$elm_ui$Internal$Flag$cursor = $mdgriffith$elm_ui$Internal$Flag$flag(21);
-var $mdgriffith$elm_ui$Element$pointer = A2($mdgriffith$elm_ui$Internal$Model$Class, $mdgriffith$elm_ui$Internal$Flag$cursor, $mdgriffith$elm_ui$Internal$Style$classes.cursorPointer);
 var $mdgriffith$elm_ui$Internal$Model$BorderWidth = F5(
 	function (a, b, c, d, e) {
 		return {$: 'BorderWidth', a: a, b: b, c: c, d: d, e: e};
@@ -12573,7 +12572,8 @@ var $author$project$Main$page = function (model) {
 			]),
 		A2(
 			$mdgriffith$elm_ui$Element$column,
-			_List_Nil,
+			_List_fromArray(
+				[$mdgriffith$elm_ui$Element$centerX]),
 			_List_fromArray(
 				[
 					A2(
@@ -12660,7 +12660,14 @@ var $author$project$Main$page = function (model) {
 							$mdgriffith$elm_ui$Element$Border$rounded(10),
 							$mdgriffith$elm_ui$Element$padding(10),
 							$mdgriffith$elm_ui$Element$alignRight,
-							$mdgriffith$elm_ui$Element$Font$size(20)
+							$mdgriffith$elm_ui$Element$Font$size(20),
+							$mdgriffith$elm_ui$Element$htmlAttribute(
+							A2($elm$html$Html$Attributes$style, 'position', 'absolute')),
+							$mdgriffith$elm_ui$Element$htmlAttribute(
+							A2($elm$html$Html$Attributes$style, 'bottom', '15px')),
+							$mdgriffith$elm_ui$Element$htmlAttribute(
+							A2($elm$html$Html$Attributes$style, 'right', '-45px')),
+							$mdgriffith$elm_ui$Element$pointer
 						]),
 					$mdgriffith$elm_ui$Element$text('↩'))
 				])));
@@ -12840,7 +12847,7 @@ var $author$project$Main$getUtility = function (state) {
 };
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
-var $author$project$Main$pause = 10;
+var $author$project$Main$pause = 1000;
 var $elm$core$Process$sleep = _Process_sleep;
 var $author$project$Main$update = F2(
 	function (msg, model) {

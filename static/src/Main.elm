@@ -24,12 +24,12 @@ aiConfig =
                 Just Minimax
 
             Silver ->
-                Just Random
+                Nothing
 
 
 pause : Float
 pause =
-    10
+    1000
 
 
 type Ai
@@ -273,7 +273,7 @@ page model =
         , Background.color (rgba 0 0 0 0.7)
         ]
         (column
-            []
+            [ centerX ]
             [ row
                 [ htmlAttribute (style "height" "100vmin")
                 , htmlAttribute (style "width" "100vmin")
@@ -330,6 +330,10 @@ page model =
                 , padding 10
                 , alignRight
                 , Font.size 20
+                , htmlAttribute (style "position" "absolute")
+                , htmlAttribute (style "bottom" "15px")
+                , htmlAttribute (style "right" "-45px")
+                , pointer
                 ]
                 (text "↩")
             ]

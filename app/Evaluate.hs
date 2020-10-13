@@ -20,6 +20,7 @@ import Statistics.Sample (mean, stdDev)
 import System.IO (writeFile)
 import System.Random (StdGen, mkStdGen, split)
 import Text.Printf (printf)
+import AlphaBeta (super)
 
 evaluate =
   let results =
@@ -65,15 +66,16 @@ evaluate =
 ais :: [(Text, (StdGen -> Ai))]
 ais =
   [ ("a Random", Ai.random),
-    ("b Max", Ai.max),
     ("c Minimax 1", Ai.minimax 1),
-    ("d Minimax 2", Ai.minimax 2)
+    ("d Minimax 2", Ai.minimax 2),
+    ("e Supermax 2", super 2),
+    ("e Supermax 3", super 3)
   ]
 
 -- | Run multiple AIs against each other.
 playOften :: (Player -> StdGen -> Ai) -> ([Float], [Int])
 playOften ais =
-  [1 .. 20]
+  [3]
     |> parMap rpar (\i -> play (mkStdGen i) ais [] (initial breakthru))
     |> foldl
       ( \(us, ls) (Utility u, history) ->

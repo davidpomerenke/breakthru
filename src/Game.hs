@@ -2,7 +2,7 @@
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Game where
+module Game where 
 
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Maybe (fromMaybe)
