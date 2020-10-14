@@ -8,24 +8,21 @@ import Game
 import System.Random
 import Prelude hiding (foldl1, max, min)
 import qualified Prelude
+import Data.Tree
 
-data Tree a = Tree a [Tree a]
 
 reducetree :: (t1 -> t2 -> t3) -> (t3 -> t2 -> t2) -> t2 -> Tree t1 -> t3
-reducetree f g x (Tree label subtrees) = f label (reducetree' f g x subtrees)
+reducetree f g x (Node label subtrees) = f label (reducetree' f g x subtrees)
 
 reducetree' :: (t1 -> p -> t) -> (t -> p -> p) -> p -> [Tree t1] -> p
 reducetree' f g x (subtree : rest) = g (reducetree f g x subtree) (reducetree' f g x rest)
 reducetree' _ _ x [] = x
 
-reduce' :: p1 -> p2 -> p3 -> [a] -> p3
-reduce' _ _ x [] = x
-
 maptree :: (t -> a) -> Tree t -> Tree a
-maptree f = reducetree (\label subtrees -> Tree (f label) subtrees) (:) []
+maptree f = reducetree (\label subtrees -> Node (f label) subtrees) (:) []
 
 reptree :: (a -> [a]) -> a -> Tree a
-reptree f a = Tree a (map (reptree f) (f a))
+reptree f a = Node a (map (reptree f) (f a))
 
 moves_ :: State -> [State]
 moves_ state =
@@ -48,27 +45,27 @@ max = foldl Prelude.max (Utility 0)
 min = foldl Prelude.min (Utility 1)
 
 maximise :: Tree Utility -> Utility
-maximise (Tree n []) = n
-maximise (Tree _ sub) = max (map minimise sub)
+maximise (Node n []) = n
+maximise (Node _ sub) = max (map minimise sub)
 
 minimise :: Tree Utility -> Utility
-minimise (Tree n []) = n
-minimise (Tree _ sub) = min (map maximise sub)
+minimise (Node n []) = n
+minimise (Node _ sub) = min (map maximise sub)
 
 prune :: Int -> Tree a -> Tree a
-prune 0 (Tree a _) = Tree a []
-prune n (Tree a x) = Tree a (map (prune (n -1)) x)
+prune 0 (Node a _) = Node a []
+prune n (Node a x) = Node a (map (prune (n -1)) x)
 
 evaluate :: State -> Utility
 evaluate = maximise . maptree static . prune 2 . gametree
 
 maximise' :: Tree Utility -> [Utility]
-maximise' (Tree n []) = [n]
-maximise' (Tree _ sub) = max' (map minimise' sub)
+maximise' (Node n []) = [n]
+maximise' (Node _ sub) = max' (map minimise' sub)
 
 minimise' :: Tree Utility -> [Utility]
-minimise' (Tree n []) = [n]
-minimise' (Tree _ sub) = min' (map maximise' sub)
+minimise' (Node n []) = [n]
+minimise' (Node _ sub) = min' (map maximise' sub)
 
 max' :: [[Utility]] -> [Utility]
 max' (first : rest) = min first : betterthan (min first) rest

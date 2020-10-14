@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 65bc88466975da3cbbeb85220a1658918d33cf3ff81cd70bc4299f6f4f6ff4bb
+-- hash: cacd5eb52a58d0e8cecc039678579b74e031a8da185a36ce9d3e1e976238b6e4
 
 name:           breakthru
 version:        0.1.0.0
@@ -39,6 +39,7 @@ library
     , base >=4.7 && <5
     , bytestring
     , cassava
+    , containers
     , flow
     , http-types
     , listsafe
@@ -67,6 +68,7 @@ executable breakthru-exe
     , breakthru
     , bytestring
     , cassava
+    , containers
     , flow
     , http-types
     , listsafe
@@ -95,6 +97,7 @@ test-suite breakthru-test
     , breakthru
     , bytestring
     , cassava
+    , containers
     , flow
     , http-types
     , listsafe

@@ -36,6 +36,7 @@ dependencies:
   - cassava
   - text
   - process
+  - containers
 
 library:
   source-dirs: src

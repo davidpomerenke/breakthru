@@ -21,9 +21,10 @@ import Network.Wai
     responseLBS,
   )
 import Network.Wai.Handler.Warp (run)
-import System.Environment ( getArgs )
+import System.Environment (getArgs)
 import System.Random (mkStdGen)
 import Web.Browser (openBrowser)
+import AlphaBeta
 
 -- | Main function. Plug in `serve` (for playing in the browser) or `compete` here, depending on what mode you want the program to start in.
 main :: IO ()
@@ -141,42 +142,29 @@ app file request respond =
 displayedState :: State
 displayedState =
   State
-    { lastPlayer = Just Silver,
-      player = (Gold, Nothing),
-      gold =
-        ( Just (Coordinate {x = 4, y = 4}),
-          [ Coordinate {x = 9, y = 8},
-            Coordinate {x = 3, y = 4},
-            Coordinate {x = 5, y = 6},
-            Coordinate {x = 8, y = 9},
-            Coordinate {x = 6, y = 9},
-            Coordinate {x = 1, y = 4},
-            Coordinate {x = 3, y = 3},
-            Coordinate {x = 7, y = 5},
-            Coordinate {x = 5, y = 3},
-            Coordinate {x = 6, y = 3},
-            Coordinate {x = 4, y = 7},
-            Coordinate {x = 5, y = 7}
-          ]
-        ),
+    { lastPlayer = Just Gold,
+      player = (Gold, Just (Coordinate {x = 3, y = 7})),
+      gold = (Just (Coordinate {x = 6, y = 5}), [Coordinate {x = 3, y = 7}]),
       silver =
-        [ Coordinate {x = 10, y = 9},
-          Coordinate {x = 3, y = 2},
-          Coordinate {x = 8, y = 2},
-          Coordinate {x = 2, y = 9},
-          Coordinate {x = 2, y = 7},
-          Coordinate {x = 7, y = 9},
-          Coordinate {x = 3, y = 7},
-          Coordinate {x = 1, y = 3},
+        [ Coordinate {x = 6, y = 8},
+          Coordinate {x = 5, y = 0},
+          Coordinate {x = 1, y = 10},
+          Coordinate {x = 5, y = 5},
+          Coordinate {x = 7, y = 5},
+          Coordinate {x = 7, y = 7},
+          Coordinate {x = 9, y = 7},
+          Coordinate {x = 3, y = 8},
+          Coordinate {x = 8, y = 6},
+          Coordinate {x = 0, y = 3},
+          Coordinate {x = 5, y = 3},
           Coordinate {x = 1, y = 5},
           Coordinate {x = 1, y = 6},
-          Coordinate {x = 9, y = 5},
+          Coordinate {x = 9, y = 3},
           Coordinate {x = 9, y = 6},
           Coordinate {x = 4, y = 1},
-          Coordinate {x = 5, y = 1},
           Coordinate {x = 6, y = 1},
-          Coordinate {x = 7, y = 1},
-          Coordinate {x = 4, y = 9},
-          Coordinate {x = 5, y = 9}
+          Coordinate {x = 3, y = 9},
+          Coordinate {x = 6, y = 9},
+          Coordinate {x = 7, y = 9}
         ]
     }

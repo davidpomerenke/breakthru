@@ -81,9 +81,12 @@ innerMiniMax depth g state@State {player = (player, _)} =
         |> catMaybes
         |> randomBest g1 player
 
+startBounds :: Player -> Utility
+startBounds _ = Utility (-1 / 0)
+
 -- Assumption: Zero-sum game.
 alphaBeta :: Int -> StdGen -> Ai
-alphaBeta depth g state = innerAlphaBeta (\_ -> Utility (1 / 0)) depth g state ((actions breakthru) state) |> fmap fst
+alphaBeta depth g state = innerAlphaBeta startBounds depth g state ((actions breakthru) state) |> fmap fst
 
 innerAlphaBeta :: (Player -> Utility) -> Int -> StdGen -> State -> [Action] -> Maybe (Action, Player -> Utility)
 innerAlphaBeta bounds depth g state@State {player = (player, _)} relActions =
@@ -95,12 +98,13 @@ innerAlphaBeta bounds depth g state@State {player = (player, _)} relActions =
               case innerAlphaBeta bounds {- todo -} (depth - 1) g2 result_ ((actions breakthru) result_) of
                 Just (a, ua)
                   | ua player <= (bounds player) -> Just (a, ua) --prune
-                  | otherwise -> case innerAlphaBeta bounds depth g1 state rest of -- look at other nodes
-                    Just (rest, urest)
-                      | ua player == urest player -> randomBest g1 player [(a, ua), (rest, urest)]
-                      | ua player > urest player -> Just (a, ua)
-                      | otherwise -> Just (rest, urest)
-                    _ -> Nothing
+                  | otherwise -> -- look at other nodes
+                    case innerAlphaBeta bounds depth g1 state rest of
+                      Just (rest, urest)
+                        | ua player == urest player -> randomBest g1 player [(a, ua), (rest, urest)]
+                        | ua player > urest player -> Just (a, ua)
+                        | otherwise -> Just (rest, urest)
+                      _ -> Nothing
                 _ -> Nothing
             _ -> Nothing
         _ -> Nothing
