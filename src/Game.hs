@@ -2,12 +2,12 @@
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Game where 
+module Game where
 
-import Data.Aeson (FromJSON, ToJSON)
-import Data.Maybe (fromMaybe)
-import Flow ((<|), (|>))
-import GHC.Generics (Generic)
+import Data.Aeson
+import Data.Maybe
+import Flow
+import GHC.Generics
 
 {- TODO
 - only one ship → only one move
@@ -23,11 +23,11 @@ move state action =
 -- GAME & BREAKTHRU TYPES
 
 -- | Formal type containing any game.
-data Game = Game
-  { initial :: State,
-    actions :: State -> [Action],
-    result :: State -> Action -> Maybe State,
-    utility :: State -> Maybe (Player -> Utility)
+data Game state action player = Game
+  { initial :: state,
+    actions :: state -> [action],
+    result :: state -> action -> Maybe state,
+    utility :: state -> Maybe (player -> Utility)
   }
 
 -- | Type for the breakthru game state.
@@ -56,13 +56,13 @@ type Fleet = [Coordinate]
 type Action = (Coordinate, Coordinate)
 
 -- | Utility of a player.
-data Utility = Utility Float
+data Utility = Utility Double
   deriving (Eq, Show, Generic, Ord)
 
 -- BREAKTHRU SPECIFICATION
 
 -- | Formal rule specification of the breakthru game.
-breakthru :: Game
+breakthru :: Game State Action Player
 breakthru =
   Game
     { initial = initial_,
@@ -158,72 +158,76 @@ moves (start@Coordinate {x, y}) state@State {player = (player, frozen), lastPlay
     else []
 
 result_ :: State -> Action -> Maybe State
-result_ =
-  \state@State {player = (player, _), lastPlayer, gold = (flagship, rest), silver}
-   ( origin@Coordinate {x = x1, y = y1},
-     end@Coordinate {x = x2, y = y2}
-     ) ->
-      if origin `elem` fleetOfPlayer player state
-        then
-          if
-              | (x1 == x2 || y1 == y2)
-                  && end `notElem` (occupied state)
-                  && (flagship /= Just origin || lastPlayer /= Just player) ->
-                -- noncapturing
-                Just
-                  State
-                    { lastPlayer = Just player,
-                      player =
-                        if lastPlayer == Just player
-                          || flagship == Just origin
-                          then (other player, Nothing)
-                          else (player, Just end),
-                      gold =
-                        case player of
-                          Gold ->
-                            if flagship == Just origin
-                              then (Just end, rest)
-                              else
-                                ( flagship,
-                                  end : (filter ((/=) origin) rest)
-                                )
-                          Silver -> (flagship, rest),
-                      silver = case player of
+result_
+  state@State {player = (player, _), lastPlayer, gold = (flagship, rest), silver}
+  ( origin@Coordinate {x = x1, y = y1},
+    end@Coordinate {x = x2, y = y2}
+    ) =
+    if origin `elem` fleetOfPlayer player state
+      then
+        if
+            | (x1 == x2 || y1 == y2)
+                && end `notElem` (occupied state)
+                && (flagship /= Just origin || lastPlayer /= Just player) ->
+              -- noncapturing
+              Just
+                State
+                  { lastPlayer = Just player,
+                    player =
+                      if lastPlayer == Just player
+                        || flagship == Just origin
+                        || length (fleetOfPlayer player state)
+                          <= case player of
+                            Gold -> 2
+                            Silver -> 1
+                        then (other player, Nothing)
+                        else (player, Just end),
+                    gold =
+                      case player of
                         Gold ->
-                          silver
-                        Silver -> end : (filter ((/=) origin) silver)
-                    }
-              | lastPlayer /= Just player
-                  && abs ((x2 - x1) * (y2 - y1)) == 1
-                  && end `elem` (fleetOfPlayer (other player) state) ->
-                -- capturing
+                          if flagship == Just origin
+                            then (Just end, rest)
+                            else
+                              ( flagship,
+                                end : (filter ((/=) origin) rest)
+                              )
+                        Silver -> (flagship, rest),
+                    silver = case player of
+                      Gold ->
+                        silver
+                      Silver -> end : (filter ((/=) origin) silver)
+                  }
+            | lastPlayer /= Just player
+                && abs ((x2 - x1) * (y2 - y1)) == 1
+                && end `elem` (fleetOfPlayer (other player) state) ->
+              -- capturing
 
-                Just
-                  State
-                    { lastPlayer = Just player,
-                      player = (other player, Nothing),
-                      gold =
-                        case player of
-                          Gold ->
-                            if flagship == Just origin
-                              then (Just end, rest)
-                              else
-                                ( flagship,
-                                  end : (filter ((/=) origin) rest)
-                                )
-                          Silver ->
-                            ( if flagship == Just end then Nothing else flagship,
-                              filter ((/=) end) rest
-                            ),
-                      silver =
-                        case player of
-                          Gold -> filter ((/=) end) silver
-                          Silver -> end : (filter ((/=) origin) silver)
-                    }
-              | otherwise ->
-                Nothing -- invalid end position
-        else -- no own ship on start position
-          Nothing
+              Just
+                State
+                  { lastPlayer = Just player,
+                    player = (other player, Nothing),
+                    gold =
+                      case player of
+                        Gold ->
+                          if flagship == Just origin
+                            then (Just end, rest)
+                            else
+                              ( flagship,
+                                end : (filter ((/=) origin) rest)
+                              )
+                        Silver ->
+                          ( if flagship == Just end then Nothing else flagship,
+                            filter ((/=) end) rest
+                          ),
+                    silver =
+                      case player of
+                        Gold -> filter ((/=) end) silver
+                        Silver -> end : (filter ((/=) origin) silver)
+                  }
+            | otherwise ->
+              Nothing -- invalid end position
+      else -- no own ship on start position
+        Nothing
 
 utility_ :: State -> Maybe (Player -> Utility)
 utility_ = \state@State {gold = (flagship, _)} ->
@@ -268,6 +272,9 @@ fleetOfPlayer player (State {gold = (flagship, rest), silver}) =
 
 occupied :: State -> [Coordinate]
 occupied state = (fleetOfPlayer Gold state) ++ (fleetOfPlayer Silver state)
+
+childStates :: State -> [State]
+childStates state = actions_ state |> map (result_ state) |> catMaybes
 
 -- Automatically create relevant JSON instances for communicating with the Elm frontend.
 
