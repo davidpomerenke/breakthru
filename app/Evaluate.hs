@@ -4,7 +4,7 @@
 module Evaluate where
 
 import Ai
-import Control.Monad (join)
+import Control.Monad 
 import Control.Parallel.Strategies (parMap, rpar)
 import Data.ByteString.Lazy.Char8 (unpack)
 import Data.Csv
@@ -20,7 +20,6 @@ import Statistics.Sample (mean, stdDev)
 import System.IO (writeFile)
 import System.Random (StdGen, mkStdGen, split)
 import Text.Printf (printf)
-import AlphaBeta (super)
 
 evaluate =
   let results =
@@ -37,7 +36,7 @@ evaluate =
                                       Gold -> ai1
                                       Silver -> ai2
                                 )
-                            vUtilities = utilities |> map float2Double |> fromList
+                            vUtilities = utilities |> fromList
                             vLengths = lengths |> map int2Double |> fromList
                          in ( \_ ->
                                 ( s1,
@@ -66,13 +65,13 @@ evaluate =
 ais :: [(Text, (StdGen -> Ai))]
 ais =
   [ ("a Random", Ai.random),
-    ("c Minimax 1", Ai.minimax 2),
-    ("e Supermax 2", super 2),
-    ("e AlphaBeta 1", Ai.alphaBeta 2)
+    ("b Minimax 2", Ai.minimax 2)
+    --("c Minimax 3", Ai.minimax 3)
+    --("c AlphaBeta 2", Ai.alphaBeta 2)
   ]
 
 -- | Run multiple AIs against each other.
-playOften :: (Player -> StdGen -> Ai) -> ([Float], [Int])
+playOften :: (Player -> StdGen -> Ai) -> ([Double], [Int])
 playOften ais =
   [1]
     |> parMap rpar (\i -> play (mkStdGen i) ais [] (initial breakthru))
@@ -84,7 +83,7 @@ playOften ais =
 
 -- | Play a game to the end. Takes a random number generator, a specification of a (possibly random-number-generator dependent) AI for each player, the history of states, and the current states. Returns the utility of player Gold and the history of states.
 play :: StdGen -> (Player -> StdGen -> Ai) -> [State] -> State -> (Utility, [State])
-play g ai history state@State{player = (player, _)} =
+play g ai history state@State {player = (player, _)} =
   let Game {result, utility} = breakthru
    in case utility state of
         Just f ->
@@ -96,8 +95,12 @@ play g ai history state@State{player = (player, _)} =
                 ai
                 (state : history)
                 ( (ai player g1 state)
-                    |> fmap (result state)
-                    |> (\a -> if a == Nothing || a == Just Nothing then traceShow state a else a)
+                    |> fmap
+                      ( \a ->
+                          let r = result state a
+                           in (if r == Nothing then traceShow ("result error", state, a) else id) r
+                      )
+                    |> (\a -> (if a ==Nothing then traceShow ("ai action error", state, a) else id) a)
                     |> join
                     |> fromMaybe initial_
                 )

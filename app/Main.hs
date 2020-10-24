@@ -24,14 +24,13 @@ import Network.Wai.Handler.Warp (run)
 import System.Environment (getArgs)
 import System.Random (mkStdGen)
 import Web.Browser (openBrowser)
-import AlphaBeta
 
 -- | Main function. Plug in `serve` (for playing in the browser) or `compete` here, depending on what mode you want the program to start in.
 main :: IO ()
 main = do
   args <- getArgs
   case args of
-    ["evaluate"] ->
+    ["evaluation"] ->
       evaluate
     ["display"] ->
       serve "display.html"
@@ -40,7 +39,7 @@ main = do
 -- | Runs the server application.
 serve :: String -> IO ()
 serve file =
-  let url = "http://localhost:8000/"
+  let url = "http://localhost:8000/" ++ file
    in do
         putStrLn url
         openBrowser url
@@ -124,7 +123,7 @@ app file request respond =
                     responseLBS
                       status200
                       [("Content-Type", "text/plain")]
-                      ( Ai.minimax 3 (mkStdGen 136) state |> fmap (result state)
+                      ( Ai.alphaBeta 4 (mkStdGen 136) state |> fmap (result state)
                           |> join
                           |> fromMaybe state
                           |> encode
@@ -142,29 +141,8 @@ app file request respond =
 displayedState :: State
 displayedState =
   State
-    { lastPlayer = Just Gold,
-      player = (Gold, Just (Coordinate {x = 3, y = 7})),
-      gold = (Just (Coordinate {x = 6, y = 5}), [Coordinate {x = 3, y = 7}]),
-      silver =
-        [ Coordinate {x = 6, y = 8},
-          Coordinate {x = 5, y = 0},
-          Coordinate {x = 1, y = 10},
-          Coordinate {x = 5, y = 5},
-          Coordinate {x = 7, y = 5},
-          Coordinate {x = 7, y = 7},
-          Coordinate {x = 9, y = 7},
-          Coordinate {x = 3, y = 8},
-          Coordinate {x = 8, y = 6},
-          Coordinate {x = 0, y = 3},
-          Coordinate {x = 5, y = 3},
-          Coordinate {x = 1, y = 5},
-          Coordinate {x = 1, y = 6},
-          Coordinate {x = 9, y = 3},
-          Coordinate {x = 9, y = 6},
-          Coordinate {x = 4, y = 1},
-          Coordinate {x = 6, y = 1},
-          Coordinate {x = 3, y = 9},
-          Coordinate {x = 6, y = 9},
-          Coordinate {x = 7, y = 9}
-        ]
+    { lastPlayer = Just Silver,
+      player = (Silver, Just (Coordinate {x = 5, y = 2})),
+      gold = (Just (Coordinate {x = 4, y = 4}), [Coordinate {x = 3, y = 4}]),
+      silver = [Coordinate {x = 5, y = 2}]
     }

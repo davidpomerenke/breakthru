@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: cacd5eb52a58d0e8cecc039678579b74e031a8da185a36ce9d3e1e976238b6e4
+-- hash: 434de4511e4b5d7c67206c9bcb268606f5b905102b1a9d425a192fd1f8437132
 
 name:           breakthru
 version:        0.1.0.0
@@ -28,7 +28,6 @@ source-repository head
 library
   exposed-modules:
       Ai
-      AlphaBeta
       Game
   other-modules:
       Paths_breakthru

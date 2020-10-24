@@ -3,23 +3,25 @@
 
 module Ai where
 
-import Control.Monad (join)
-import Control.Parallel.Strategies (parMap, rpar)
-import Data.List.Safe ((!!))
-import Data.Maybe (catMaybes, fromMaybe)
+import Control.Monad
+import Control.Monad.ST
+import Control.Parallel.Strategies
+import Data.List.Safe
+import Data.Maybe
 import Debug.Trace
-import Flow ((|>))
+import Flow
 import Game
-import System.Random (StdGen, randomR, split)
-import Prelude hiding (foldl1, (!!))
+import System.Random
+import Prelude hiding (foldl1, max, min, (!!))
+import qualified Prelude
 
 type Ai = State -> Maybe Action
 
+randomEl :: StdGen -> [a] -> Maybe a
+randomEl g l = l !! (randomR (0, length l - 1) g |> fst)
+
 random :: StdGen -> Ai
-random g state =
-  let actions_ = (actions breakthru) state
-      i = (randomR (0, length actions_ - 1) g |> fst)
-   in (actions_ !! i)
+random g state = randomEl g ((actions breakthru) state)
 
 maxFleet :: Player -> Int
 maxFleet player =
@@ -33,78 +35,114 @@ heuristic state player =
       maxFleet1 = fromIntegral (maxFleet player)
       fleet2 = fromIntegral (length (fleetOfPlayer (other player) state))
       maxFleet2 = fromIntegral (maxFleet (other player))
-   in Utility (fleet1 / maxFleet1 - fleet2 / maxFleet2)
+   in (Utility (fleet1 / maxFleet1 - fleet2 / maxFleet2))
+
+-- | Aggregate the best actions and their corresponding utility from a list of action-utility tuples.
+aggBest :: Player -> [(Action, Player -> Utility)] -> ([Action], Player -> Utility)
+aggBest player actions =
+  foldl
+    ( \(bestActions, bestValue) (action, value) ->
+        if
+            | value player > bestValue player -> ([action], value)
+            | value player == bestValue player -> (action : bestActions, bestValue)
+            | otherwise -> (bestActions, bestValue)
+    )
+    ([], \_ -> Utility (-1 / 0))
+    actions
 
 -- | Randomly selects one of the best actions and the corresponding utility from a list of action-utility tuples.
 randomBest :: StdGen -> Player -> [(Action, Player -> Utility)] -> Maybe (Action, Player -> Utility)
 randomBest g player actions =
-  let (bestActions, f) =
-        foldl
-          ( \(bestActions, bestValue) (action, value) ->
-              if
-                  | value player > bestValue player -> ([action], value)
-                  | value player == bestValue player -> (action : bestActions, bestValue)
-                  | otherwise -> (bestActions, bestValue)
-          )
-          ([], \_ -> Utility (-1 / 0))
-          actions
-      i = (randomR (0, length bestActions - 1) g |> fst)
-   in bestActions !! i |> fmap (\randomBest -> (randomBest, f))
+  let (bestActions, f) = aggBest player actions
+   in randomEl g bestActions |> fmap (\el -> (el, f))
 
-minimax :: Int -> StdGen -> Ai
-minimax depth g state = innerMiniMax depth g state |> fmap fst
+argMax :: Ord b => (a -> b) -> [a] -> Maybe a
+argMax f = foldl1 (\a b -> if (f a) >= (f b) then a else b)
 
-innerMiniMax :: Int -> StdGen -> State -> Maybe (Action, Player -> Utility)
-innerMiniMax depth g state@State {player = (player, _)} =
-  let (g1, g2) = split g
-      map_ = if depth >= 3 then parMap rpar else map
-      Game {actions, result, utility} = breakthru
-   in actions state
-        |> map_
-          ( \action ->
-              result state action
-                |> fmap
-                  ( \result ->
-                      ( action,
-                        utility result
-                          |> fromMaybe
-                            ( if depth > 1
-                                then
-                                  innerMiniMax (depth - 1) g2 result
-                                    |> fmap snd
-                                    |> fromMaybe (heuristic result)
-                                else heuristic result
-                            )
-                      )
-                  )
-          )
-        |> catMaybes
-        |> randomBest g1 player
+max :: Ord a => [a] -> Maybe a
+max = argMax id
+
+argMin :: Ord b => (a -> b) -> [a] -> Maybe a
+argMin f = foldl1 (\a b -> if (f a) <= (f b) then a else b)
+
+min :: Ord a => [a] -> Maybe a
+min = argMin id
+
+minimax :: Integer -> StdGen -> State -> Maybe Action
+minimax depth g state@State {player = (player, _)} =
+  (actions breakthru) state
+    |> parMap
+      rpar
+      ( \action ->
+          (result breakthru) state action
+            |> fmap (\result -> (action, innerMiniMax (depth - 1) result))
+      )
+    |> catMaybes
+    |> randomBest g player
+    |> fmap fst
+
+innerMiniMax :: Integer -> State -> (Player -> Utility)
+innerMiniMax depth state@State {player = (player, _)} =
+  (utility breakthru) state
+    |> fromMaybe
+      ( if
+            | depth <= 0 -> (heuristic state)
+            | otherwise ->
+              childStates state
+                |> map (innerMiniMax (depth - 1))
+                |> argMax (apply player)
+                |> fromMaybe (\_ -> Utility 0)
+      )
 
 startBounds :: Player -> Utility
-startBounds _ = Utility (-1 / 0)
+startBounds _ = Utility (1 / 0)
 
--- Assumption: Zero-sum game.
-alphaBeta :: Int -> StdGen -> Ai
-alphaBeta depth g state = innerAlphaBeta startBounds depth g state ((actions breakthru) state) |> fmap fst
+alphaBeta :: Integer -> StdGen -> State -> Maybe Action
+alphaBeta depth g state@State {player = (player, _)} =
+  (actions breakthru) state
+    |> parMap rpar
+      ( \action ->
+          (result breakthru) state action
+            |> fmap
+              ( \result ->
+                  ( action,
+                    innerAlphaBeta
+                      (depth - 1)
+                      result
+                      ((actions breakthru) result)
+                      (\_ -> Utility (1 / 0))
+                      (\_ -> Utility (-1 / 0))
+                  )
+              )
+      )
+    |> catMaybes
+    |> (\a -> traceShow (a |> take 10 |> map snd |> map (apply player)) a)
+    |> randomBest g player
+    |> fmap fst
 
-innerAlphaBeta :: (Player -> Utility) -> Int -> StdGen -> State -> [Action] -> Maybe (Action, Player -> Utility)
-innerAlphaBeta bounds depth g state@State {player = (player, _)} relActions =
-  let (g1, g2) = split g
-   in case relActions of
-        a : rest ->
-          case (result breakthru) state a of
-            Just result_ ->
-              case innerAlphaBeta bounds {- todo -} (depth - 1) g2 result_ ((actions breakthru) result_) of
-                Just (a, ua)
-                  | ua player <= (bounds player) -> Just (a, ua) --prune
-                  | otherwise -> -- look at other nodes
-                    case innerAlphaBeta bounds depth g1 state rest of
-                      Just (rest, urest)
-                        | ua player == urest player -> randomBest g1 player [(a, ua), (rest, urest)]
-                        | ua player > urest player -> Just (a, ua)
-                        | otherwise -> Just (rest, urest)
-                      _ -> Nothing
-                _ -> Nothing
-            _ -> Nothing
-        _ -> Nothing
+innerAlphaBeta :: Integer -> State -> [Action] -> (Player -> Utility) -> (Player -> Utility) -> Player -> Utility
+innerAlphaBeta _ _ [] _ values = values
+innerAlphaBeta depth state@State {player = (player, _)} (action : rest) bounds values =
+  case (result breakthru) state action of
+    Just result_ ->
+      let u =
+            (utility breakthru) result_
+              |> fromMaybe
+                ( if
+                      | depth <= 0 -> heuristic result_
+                      | otherwise ->
+                        innerAlphaBeta (depth - 1) result_ ((actions breakthru) result_) bounds (\_ -> Utility (-1 / 0))
+                )
+
+          invertedU = let Utility u_ = u player in Utility (- u_)
+          newBounds p =
+            if p == player
+              then bounds player
+              else Prelude.min (bounds (other player)) invertedU
+          nextU = innerAlphaBeta depth state rest newBounds values
+       in ( if u player >= bounds player
+              then argMax (apply player) [values, u] -- prune
+              else argMax (apply player) [values, u, nextU] -- consider next action(s)
+          )
+            |> fromMaybe values
+    Nothing -> values
