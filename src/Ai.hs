@@ -35,7 +35,7 @@ heuristic state player =
       maxFleet1 = fromIntegral (maxFleet player)
       fleet2 = fromIntegral (length (fleetOfPlayer (other player) state))
       maxFleet2 = fromIntegral (maxFleet (other player))
-   in (Utility (fleet1 / maxFleet1 - fleet2 / maxFleet2))
+   in Utility (fleet1 / maxFleet1 - fleet2 / maxFleet2)
 
 -- | Aggregate the best actions and their corresponding utility from a list of action-utility tuples.
 aggBest :: Player -> [(Action, Player -> Utility)] -> ([Action], Player -> Utility)
@@ -56,17 +56,20 @@ randomBest g player actions =
   let (bestActions, f) = aggBest player actions
    in randomEl g bestActions |> fmap (\el -> (el, f))
 
-argMax :: Ord b => (a -> b) -> [a] -> Maybe a
-argMax f = foldl1 (\a b -> if (f a) >= (f b) then a else b)
+argF :: Ord b => (b -> b -> Bool) -> (a -> b) -> a -> [a] -> a
+argF comp f x = foldl (\a b -> if (f a) `comp` (f b) then a else b) x
 
-max :: Ord a => [a] -> Maybe a
-max = argMax id
+argMax :: Ord b => (a -> b) -> a -> [a] -> a
+argMax = argF (>=)
 
-argMin :: Ord b => (a -> b) -> [a] -> Maybe a
-argMin f = foldl1 (\a b -> if (f a) <= (f b) then a else b)
+max :: Ord a => a -> [a] -> a
+max x = argMax id x
 
-min :: Ord a => [a] -> Maybe a
-min = argMin id
+argMin :: Ord b => (a -> b) -> a -> [a] -> a
+argMin = argF (<=)
+
+min :: Ord a => a -> [a] -> a
+min x = argMin id x
 
 minimax :: Integer -> StdGen -> State -> Maybe Action
 minimax depth g state@State {player = (player, _)} =
@@ -90,60 +93,44 @@ innerMiniMax depth state@State {player = (player, _)} =
             | otherwise ->
               childStates state
                 |> map (innerMiniMax (depth - 1))
-                |> argMax (apply player)
-                |> fromMaybe (\_ -> Utility 0)
+                |> argMax (apply player) (\_ -> Utility 0)
       )
 
 startBounds :: Player -> Utility
 startBounds _ = Utility (1 / 0)
 
 alphaBeta :: Integer -> StdGen -> State -> Maybe Action
-alphaBeta depth g state@State {player = (player, _)} =
-  (actions breakthru) state
-    |> parMap
-      rpar
-      ( \action ->
-          (result breakthru) state action
-            |> fmap
-              ( \result ->
-                  ( action,
-                    innerAlphaBeta
-                      (depth - 1)
-                      result
-                      ((actions breakthru) result)
-                      (\_ -> Utility (1 / 0))
-                      (\_ -> Utility (-1 / 0))
-                  )
-              )
-      )
-    |> catMaybes
-    |> (\a -> traceShow (a |> take 10 |> map snd |> map (apply player)) a)
-    |> randomBest g player
-    |> fmap fst
+alphaBeta depth _ state@State {player = (player, _)} =
+  case ((actions breakthru) state) of
+    a : rest ->
+      Just <| fst <| innerAlphaBeta depth state a rest (\_ -> Utility (1 / 0))
+    [] -> Nothing
 
-innerAlphaBeta :: Integer -> State -> [Action] -> (Player -> Utility) -> (Maybe Action, Player -> Utility) -> (Maybe Action, Player -> Utility)
-innerAlphaBeta _ _ [] _ _ = (Nothing, \_ -> Utility 0)
-innerAlphaBeta depth state@State {player = (player, _)} (action : rest) bounds (bestAction, values) =
-  case (result breakthru) state action of
-    Just result_ ->
-      let u =
+innerAlphaBeta :: Integer -> State -> Action -> [Action] -> (Player -> Utility) -> (Action, Player -> Utility)
+innerAlphaBeta depth state@State {player = (player, _)} action rest bounds =
+  let u =
+        case (result breakthru) state action of
+          Just result_ ->
             (utility breakthru) result_
               |> fromMaybe
                 ( if
                       | depth <= 0 -> heuristic result_
                       | otherwise ->
-                        snd <| innerAlphaBeta (depth - 1) result_ ((actions breakthru) result_) bounds (Nothing, \_ -> Utility (-1 / 0))
+                        case (actions breakthru) result_ of
+                          a : rest -> snd <| innerAlphaBeta (depth - 1) result_ a rest bounds
+                          [] -> \_ -> Utility 0
                 )
-
-          invertedU = let Utility u_ = u player in Utility (- u_)
-          newBounds p =
-            if p == player
-              then bounds player
-              else Prelude.min (bounds (other player)) invertedU
-          nextU = innerAlphaBeta depth state rest newBounds (Nothing, \_ -> Utility (-1 / 0))
-       in ( if u player >= bounds player
-              then argMax (apply player . snd) [(bestAction, values), (Just action, u)] -- prune
-              else argMax (apply player . snd) [(bestAction, values), (Just action, u), nextU] -- consider next action(s)
-          )
-            |> fromMaybe (bestAction, values)
-    Nothing -> (Nothing, \_ -> Utility 0)
+          Nothing -> \_ -> Utility (-1 / 0)
+      invertedU = let Utility u_ = u player in Utility (- u_)
+      newBounds p =
+        if p == player
+          then bounds player
+          else Prelude.min (bounds (other player)) invertedU
+   in case rest of
+        a : rest ->
+          let nextU = innerAlphaBeta depth state a rest newBounds
+           -- traceShow (replicate (20 - 4 * fromInteger depth) ' ' ++ show (length rest, u player >= bounds player))
+           in if u player >= bounds player
+                then (action, u) -- prune
+                else argMax (apply player . snd) (action, u) [nextU] -- consider next action(s)
+        [] -> (action, u)

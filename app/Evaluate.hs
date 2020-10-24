@@ -4,7 +4,7 @@
 module Evaluate where
 
 import Ai
-import Control.Monad 
+import Control.Monad
 import Control.Parallel.Strategies (parMap, rpar)
 import Data.ByteString.Lazy.Char8 (unpack)
 import Data.Csv
@@ -23,32 +23,32 @@ import Text.Printf (printf)
 
 evaluate =
   let results =
-        ais
-          |> map
-            ( \(s1, ai1) ->
-                ais
-                  |> map
-                    ( \(s2, ai2) ->
-                        let (utilities, lengths) =
-                              playOften
-                                ( \a ->
-                                    case a of
-                                      Gold -> ai1
-                                      Silver -> ai2
-                                )
-                            vUtilities = utilities |> fromList
-                            vLengths = lengths |> map int2Double |> fromList
-                         in ( \_ ->
-                                ( s1,
-                                  s2,
-                                  vUtilities |> mean,
-                                  vUtilities |> stdDev,
-                                  vLengths |> mean,
-                                  vLengths |> stdDev
-                                )
+        map
+          ( \(s1, ai1) ->
+              map
+                ( \(s2, ai2) ->
+                    let (utilities, lengths) =
+                          playOften
+                            ( \a ->
+                                case a of
+                                  Gold -> ai1
+                                  Silver -> ai2
                             )
-                    )
-            )
+                        vUtilities = utilities |> fromList
+                        vLengths = lengths |> map int2Double |> fromList
+                     in ( \_ ->
+                            ( s1,
+                              s2,
+                              vUtilities |> mean,
+                              vUtilities |> stdDev,
+                              vLengths |> mean,
+                              vLengths |> stdDev
+                            )
+                        )
+                )
+                ais
+          )
+          ais
           |> concat
           |> parMap rpar (\a -> a ())
    in let path = "evaluation/results.csv"
@@ -65,9 +65,10 @@ evaluate =
 ais :: [(Text, (StdGen -> Ai))]
 ais =
   [ ("a Random", Ai.random),
-    ("b Minimax 2", Ai.minimax 2)
-    --("c Minimax 3", Ai.minimax 3)
-    --("c AlphaBeta 2", Ai.alphaBeta 2)
+    --("b Minimax 2", Ai.minimax 2),
+    --("c Minimax 3", Ai.minimax 3),
+    ("d AlphaBeta 1", Ai.alphaBeta 1)
+    --("e AlphaBeta 3", Ai.alphaBeta 3)
   ]
 
 -- | Run multiple AIs against each other.
@@ -93,14 +94,14 @@ play g ai history state@State {player = (player, _)} =
            in play
                 g2
                 ai
-                (state : history)
+                ((traceShowId state) : history)
                 ( (ai player g1 state)
                     |> fmap
                       ( \a ->
                           let r = result state a
                            in (if r == Nothing then traceShow ("result error", state, a) else id) r
                       )
-                    |> (\a -> (if a ==Nothing then traceShow ("ai action error", state, a) else id) a)
+                    |> (\a -> (if a == Nothing then traceShow ("ai action error", state, a) else id) a)
                     |> join
                     |> fromMaybe initial_
                 )
