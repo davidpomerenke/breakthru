@@ -100,7 +100,8 @@ startBounds _ = Utility (1 / 0)
 alphaBeta :: Integer -> StdGen -> State -> Maybe Action
 alphaBeta depth g state@State {player = (player, _)} =
   (actions breakthru) state
-    |> parMap rpar
+    |> parMap
+      rpar
       ( \action ->
           (result breakthru) state action
             |> fmap
@@ -120,9 +121,9 @@ alphaBeta depth g state@State {player = (player, _)} =
     |> randomBest g player
     |> fmap fst
 
-innerAlphaBeta :: Integer -> State -> [Action] -> (Player -> Utility) -> (Player -> Utility) -> Player -> Utility
-innerAlphaBeta _ _ [] _ values = values
-innerAlphaBeta depth state@State {player = (player, _)} (action : rest) bounds values =
+innerAlphaBeta :: Integer -> State -> [Action] -> (Player -> Utility) -> (Maybe Action, Player -> Utility) -> (Maybe Action, Player -> Utility)
+innerAlphaBeta _ _ [] _ _ = (Nothing, \_ -> Utility 0)
+innerAlphaBeta depth state@State {player = (player, _)} (action : rest) bounds (bestAction, values) =
   case (result breakthru) state action of
     Just result_ ->
       let u =
@@ -131,7 +132,7 @@ innerAlphaBeta depth state@State {player = (player, _)} (action : rest) bounds v
                 ( if
                       | depth <= 0 -> heuristic result_
                       | otherwise ->
-                        innerAlphaBeta (depth - 1) result_ ((actions breakthru) result_) bounds (\_ -> Utility (-1 / 0))
+                        snd <| innerAlphaBeta (depth - 1) result_ ((actions breakthru) result_) bounds (Nothing, \_ -> Utility (-1 / 0))
                 )
 
           invertedU = let Utility u_ = u player in Utility (- u_)
@@ -139,10 +140,10 @@ innerAlphaBeta depth state@State {player = (player, _)} (action : rest) bounds v
             if p == player
               then bounds player
               else Prelude.min (bounds (other player)) invertedU
-          nextU = innerAlphaBeta depth state rest newBounds values
+          nextU = innerAlphaBeta depth state rest newBounds (Nothing, \_ -> Utility (-1 / 0))
        in ( if u player >= bounds player
-              then argMax (apply player) [values, u] -- prune
-              else argMax (apply player) [values, u, nextU] -- consider next action(s)
+              then argMax (apply player . snd) [(bestAction, values), (Just action, u)] -- prune
+              else argMax (apply player . snd) [(bestAction, values), (Just action, u), nextU] -- consider next action(s)
           )
-            |> fromMaybe values
-    Nothing -> values
+            |> fromMaybe (bestAction, values)
+    Nothing -> (Nothing, \_ -> Utility 0)
