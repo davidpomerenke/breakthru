@@ -11,7 +11,8 @@ import Prelude hiding (foldl1, max, min, (!!))
 
 -- HELPERS FOR THE AI
 
--- | Type for AIs. There are three implementations of this type: `random`, `minimax`, and `alphaBeta`.
+-- | Type for AIs.
+-- | There are three implementations of this type: `random`, `minimax`, and `alphaBeta`.
 type Ai = State -> Maybe Action
 
 -- RANDOM AI
@@ -31,7 +32,7 @@ utilityOfPlayer :: Player -> Utility -> Utility
 utilityOfPlayer player (Utility u) = case player of
   Gold -> Utility u
   Silver -> Utility (- u)
-  
+
 -- HEURISTIC
 
 -- | Maximum size of the fleet of either player.

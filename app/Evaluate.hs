@@ -69,16 +69,16 @@ ais =
   [ ("a Random", random),
     ("b Minimax 1", minimax 1),
     --("c AlphaBeta 1", alphaBeta 1),
-    ("d Minimax 2", minimax 2),
+    ("c Minimax 2", minimax 2),
     --("e AlphaBeta 2", alphaBeta 2),
-    ("f AlphaBeta 1", minimax 3)
+    ("d Minimax 3", minimax 3)
     --("g AlphaBeta 3", alphaBeta 3)
   ]
 
 -- | Run multiple AIs against each other.
 playOften :: (Player -> StdGen -> Ai) -> ([Float], [Int])
 playOften ais =
-  [1]
+  [10]
     |> parMap rpar (\i -> play (mkStdGen i) ais [] (initial breakthru))
     |> foldl
       ( \(us, ls) (Utility u, history) ->

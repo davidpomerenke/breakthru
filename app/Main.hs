@@ -125,7 +125,7 @@ app file request respond =
                     responseLBS
                       status200
                       [("Content-Type", "text/plain")]
-                      ( alphaBeta 3 (mkStdGen 136) state |> fmap (result state)
+                      ( minimax 3 (mkStdGen 137) state |> fmap (result state)
                           |> join
                           |> fromMaybe state
                           |> encode

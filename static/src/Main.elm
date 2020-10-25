@@ -16,17 +16,6 @@ import Process
 import Task
 
 
-aiConfig : Player -> Maybe Ai
-aiConfig =
-    \player ->
-        case player of
-            Gold ->
-                Just Minimax
-
-            Silver ->
-                Nothing
-
-
 pause : Float
 pause =
     2000
@@ -34,12 +23,14 @@ pause =
 
 type Ai
     = Random
-    | Max
     | Minimax
 
 
 type alias Model =
-    { ai : Player -> Maybe Ai
+    { ai1 : Maybe Ai
+    , ai2 : Maybe Ai
+    , ai1Selected : Bool
+    , ai2Selected : Bool
     , actions : List ( Coordinate, Coordinate )
     , selectedShip : Maybe Coordinate
     , winner : Maybe String
@@ -56,6 +47,8 @@ type Msg
     | SelectShip (Maybe Coordinate)
     | ShowBoardAndChill (Result Http.Error State)
     | Back
+    | SelectAi1 (Maybe Ai)
+    | SelectAi2 (Maybe Ai)
 
 
 init : () -> ( Model, Cmd Msg )
@@ -69,7 +62,10 @@ init _ =
             , silver = []
             }
     in
-    ( { ai = aiConfig
+    ( { ai1 = Nothing
+      , ai2 = Nothing
+      , ai1Selected = False
+      , ai2Selected = False
       , actions = []
       , selectedShip = Nothing
       , winner = Nothing
@@ -78,6 +74,16 @@ init _ =
       }
     , getInit
     )
+
+
+aiConfig : Model -> Player -> Maybe Ai
+aiConfig model player =
+    case player of
+        Gold ->
+            model.ai1
+
+        Silver ->
+            model.ai2
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -125,7 +131,7 @@ update msg ({ state } as model) =
                             else
                                 Nothing
                       }
-                    , case model.ai state.player of
+                    , case aiConfig model state.player of
                         Just _ ->
                             Process.sleep pause |> Task.perform (\_ -> WaitedForAiMove)
 
@@ -156,7 +162,7 @@ update msg ({ state } as model) =
 
         WaitedForAiMove ->
             ( model
-            , case aiConfig state.player of
+            , case aiConfig model state.player of
                 Just ai ->
                     getAiMove ai model.state
 
@@ -186,6 +192,12 @@ update msg ({ state } as model) =
 
                 _ ->
                     ( model, Cmd.none )
+
+        SelectAi1 ai ->
+            ( { model | ai1 = ai, ai1Selected = True }, getUtility model.state )
+
+        SelectAi2 ai ->
+            ( { model | ai2 = ai, ai2Selected = True }, getUtility model.state )
 
 
 main : Program () Model Msg
@@ -251,9 +263,6 @@ getAiMove ai state =
                         Random ->
                             "random"
 
-                        Max ->
-                            "max"
-
                         Minimax ->
                             "minimax"
                    )
@@ -271,7 +280,31 @@ page model =
         ]
         (column
             [ centerX ]
-            [ row
+            [ column []
+                [ column [ Font.color (rgb 1 1 1), pointer, Font.size 24 ]
+                    (if not model.ai1Selected then
+                        [ text "Select AI for player Gold:"
+                        , el [ onClick (SelectAi1 Nothing) ] (text "Play manually")
+                        , el [ onClick (SelectAi1 (Just Random)) ] (text "Random")
+                        , el [ onClick (SelectAi1 (Just Minimax)) ] (text "Smart")
+                        ]
+
+                     else
+                        [ text "" ]
+                    )
+                , column [ Font.color (rgb 1 1 1), pointer, Font.size 24 ]
+                    (if not model.ai2Selected then
+                        [ text "Select AI for player Silver:"
+                        , el [ onClick (SelectAi2 Nothing) ] (text "Play manually")
+                        , el [ onClick (SelectAi2 (Just Random)) ] (text "Random")
+                        , el [ onClick (SelectAi2 (Just Minimax)) ] (text "Smart")
+                        ]
+
+                     else
+                        [ text "" ]
+                    )
+                ]
+            , row
                 [ htmlAttribute (style "height" "100vmin")
                 , htmlAttribute (style "width" "100vmin")
                 , centerX

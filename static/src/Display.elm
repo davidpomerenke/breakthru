@@ -21,6 +21,7 @@ main =
         }
 
 
+
 init : () -> ( Model, Cmd Msg )
 init _ =
     let
@@ -32,7 +33,10 @@ init _ =
             , silver = []
             }
     in
-    ( { ai = \_ -> Nothing
+    ( { ai1 = Nothing
+      , ai2 = Nothing
+      , ai1Selected = True
+      , ai2Selected = True
       , actions = []
       , selectedShip = Nothing
       , winner = Nothing

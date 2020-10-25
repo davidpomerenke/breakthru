@@ -47,15 +47,17 @@ data Player
 data Coordinate = Coordinate {x :: Int, y :: Int}
   deriving (Eq, Show, Generic, Hashable)
 
--- | All ship coordinates of a player.
-type Fleet = [Coordinate]
-
 -- | Game action. Consists of the original and the new coordinates of the moved ship.
 type Action = (Coordinate, Coordinate)
 
 -- | Utility of a player.
 data Utility = Utility Float
   deriving (Eq, Show, Generic, Ord)
+
+-- | All ship coordinates of a player.
+type Fleet = [Coordinate]
+
+
 
 -- BREAKTHRU SPECIFICATION
 

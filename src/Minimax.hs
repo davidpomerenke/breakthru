@@ -24,6 +24,7 @@ minimax depth g state@State {player} =
             |> fmap (\result -> (action, utilityOfPlayer player (innerMiniMax (depth - 1) result)))
       )
     |> catMaybes
+    |> (\a -> traceShow (map snd a) a)
     |> randomBest g player
     |> fmap fst
 

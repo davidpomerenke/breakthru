@@ -1,0 +1,17 @@
+Gold,Silver,Utility,Utility (StdDev),Ply-Depth,Ply-Depth (StdDev)
+a Random,a Random,1.0,0.0,178.0,0.0
+a Random,b Minimax 1,1.0,0.0,171.0,0.0
+a Random,c Minimax 2,1.0,0.0,26.0,0.0
+a Random,d Minimax 3,1.0,0.0,117.0,0.0
+b Minimax 1,a Random,1.0,0.0,32.0,0.0
+b Minimax 1,b Minimax 1,1.0,0.0,17.0,0.0
+b Minimax 1,c Minimax 2,1.0,0.0,7.0,0.0
+b Minimax 1,d Minimax 3,1.0,0.0,10.0,0.0
+c Minimax 2,a Random,1.0,0.0,68.0,0.0
+c Minimax 2,b Minimax 1,1.0,0.0,33.0,0.0
+c Minimax 2,c Minimax 2,1.0,0.0,28.0,0.0
+c Minimax 2,d Minimax 3,1.0,0.0,8.0,0.0
+d Minimax 3,a Random,1.0,0.0,54.0,0.0
+d Minimax 3,b Minimax 1,1.0,0.0,20.0,0.0
+d Minimax 3,c Minimax 2,1.0,0.0,18.0,0.0
+d Minimax 3,d Minimax 3,1.0,0.0,14.0,0.0
