@@ -15,7 +15,8 @@ type Player
 
 type alias State =
     { lastPlayer : Maybe Player
-    , player : (Player, Maybe Coordinate)
+    , player : Player
+    , movedPiece : Maybe Coordinate
     , gold : ( Maybe Coordinate, List Coordinate )
     , silver : List Coordinate
     }

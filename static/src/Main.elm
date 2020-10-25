@@ -29,7 +29,7 @@ aiConfig =
 
 pause : Float
 pause =
-    1000
+    2000
 
 
 type Ai
@@ -63,7 +63,8 @@ init _ =
     let
         emptyState =
             { lastPlayer = Nothing
-            , player = ( Gold, Nothing )
+            , player = Gold
+            , movedPiece = Nothing
             , gold = ( Nothing, [] )
             , silver = []
             }
@@ -81,10 +82,6 @@ init _ =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg ({ state } as model) =
-    let
-        ( player_, _ ) =
-            state.player
-    in
     case msg of
         GotActions r ->
             case r of
@@ -128,7 +125,7 @@ update msg ({ state } as model) =
                             else
                                 Nothing
                       }
-                    , case model.ai player_ of
+                    , case model.ai state.player of
                         Just _ ->
                             Process.sleep pause |> Task.perform (\_ -> WaitedForAiMove)
 
@@ -159,7 +156,7 @@ update msg ({ state } as model) =
 
         WaitedForAiMove ->
             ( model
-            , case aiConfig player_ of
+            , case aiConfig state.player of
                 Just ai ->
                     getAiMove ai model.state
 

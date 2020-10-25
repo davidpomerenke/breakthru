@@ -3,7 +3,6 @@
 
 module Main where
 
-import Ai
 import Control.Monad (join)
 import Data.Aeson (decode, encode)
 import Data.ByteString.Lazy (fromStrict)
@@ -24,8 +23,11 @@ import Network.Wai.Handler.Warp (run)
 import System.Environment (getArgs)
 import System.Random (mkStdGen)
 import Web.Browser (openBrowser)
+import AlphaBeta
+import Minimax
+import Helpers
 
--- | Main function. Plug in `serve` (for playing in the browser) or `compete` here, depending on what mode you want the program to start in.
+-- | Main function. Evaluates command line arguments.
 main :: IO ()
 main = do
   args <- getArgs
@@ -100,7 +102,7 @@ app file request respond =
                       [("Content-Type", "text/plain")]
                       ( ( case utility state of
                             Nothing -> 0
-                            Just f -> let Utility u = f Gold in u
+                            Just (Utility u) -> u
                         )
                           |> encode
                       )
@@ -111,7 +113,7 @@ app file request respond =
                     responseLBS
                       status200
                       [("Content-Type", "text/plain")]
-                      ( Ai.random (mkStdGen 137) state |> fmap (result state)
+                      ( random (mkStdGen 137) state |> fmap (result state)
                           |> join
                           |> fromMaybe state
                           |> encode
@@ -123,7 +125,7 @@ app file request respond =
                     responseLBS
                       status200
                       [("Content-Type", "text/plain")]
-                      ( Ai.alphaBeta 4 (mkStdGen 136) state |> fmap (result state)
+                      ( alphaBeta 3 (mkStdGen 136) state |> fmap (result state)
                           |> join
                           |> fromMaybe state
                           |> encode
@@ -138,11 +140,13 @@ app file request respond =
                 ("static/" ++ file)
                 Nothing
 
+-- | Just an arbitrary state displayed when running with command line argument `display`. For debugging purposes.
 displayedState :: State
 displayedState =
   State
     { lastPlayer = Just Silver,
-      player = (Silver, Just (Coordinate {x = 5, y = 2})),
+      player = Silver,
+      movedPiece = Just (Coordinate {x = 5, y = 2}),
       gold = (Just (Coordinate {x = 4, y = 4}), [Coordinate {x = 3, y = 4}]),
       silver = [Coordinate {x = 5, y = 2}]
     }

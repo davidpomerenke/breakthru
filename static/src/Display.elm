@@ -26,7 +26,8 @@ init _ =
     let
         emptyState =
             { lastPlayer = Nothing
-            , player = ( Gold, Nothing )
+            , player = Gold
+            , movedPiece = Nothing
             , gold = ( Nothing, [] )
             , silver = []
             }
@@ -35,7 +36,7 @@ init _ =
       , actions = []
       , selectedShip = Nothing
       , winner = Nothing
-      , state = emptyState 
+      , state = emptyState
       , lastStates = []
       }
     , getBoard

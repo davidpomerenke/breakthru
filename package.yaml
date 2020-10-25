@@ -37,6 +37,8 @@ dependencies:
   - text
   - process
   - containers
+  - unordered-containers
+  - hashable 
 
 library:
   source-dirs: src

@@ -44,11 +44,9 @@ toMaybePlayer p =
             D.succeed Nothing
 
 
-decodePlayer : D.Decoder ( Player, Maybe Coordinate )
+decodePlayer : D.Decoder Player 
 decodePlayer =
-    D.map2 Tuple.pair
-        (D.index 0 (D.string |> D.andThen toPlayer))
-        (D.index 1 (D.nullable decodeCoordinate))
+    D.string |> D.andThen toPlayer
 
 
 toPlayer : String -> D.Decoder Player
@@ -80,6 +78,7 @@ decodeState =
     D.succeed State
         |> required "lastPlayer" (D.nullable D.string |> D.andThen toMaybePlayer)
         |> required "player" decodePlayer
+        |> required "movedPiece" (D.nullable decodeCoordinate)
         |> required "gold" decodeGold
         |> required "silver" (D.list decodeCoordinate)
 
@@ -130,17 +129,15 @@ encodeMaybeCoordinate flagship =
 
 
 encodeState : State -> E.Value
-encodeState { lastPlayer, player, gold, silver } =
+encodeState { lastPlayer, player, movedPiece, gold, silver } =
     let
         ( flagship, rest ) =
             gold
-
-        ( player_, coord ) =
-            player
     in
     E.object
         [ ( "lastPlayer", encodePlayer lastPlayer )
-        , ( "player", E.list identity [ encodePlayer (Just player_), encodeMaybeCoordinate coord ] )
+        , ( "player", encodePlayer (Just player) )
+        , ( "movedPiece", encodeMaybeCoordinate movedPiece)
         , ( "gold", E.list identity [ encodeMaybeCoordinate flagship, E.list encodeCoordinate rest ] )
         , ( "silver", E.list encodeCoordinate silver )
         ]

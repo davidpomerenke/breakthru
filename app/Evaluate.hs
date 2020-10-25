@@ -3,7 +3,7 @@
 
 module Evaluate where
 
-import Ai
+import AlphaBeta
 import Control.Monad
 import Control.Parallel.Strategies (parMap, rpar)
 import Data.ByteString.Lazy.Char8 (unpack)
@@ -16,6 +16,8 @@ import Flow ((<|), (|>))
 import GHC.Float (float2Double, int2Double)
 import GHC.Generics (Generic)
 import Game
+import Helpers
+import Minimax
 import Statistics.Sample (mean, stdDev)
 import System.IO (writeFile)
 import System.Random (StdGen, mkStdGen, split)
@@ -34,7 +36,7 @@ evaluate =
                                   Gold -> ai1
                                   Silver -> ai2
                             )
-                        vUtilities = utilities |> fromList
+                        vUtilities = utilities |> map float2Double |> fromList
                         vLengths = lengths |> map int2Double |> fromList
                      in ( \_ ->
                             ( s1,
@@ -64,15 +66,17 @@ evaluate =
 
 ais :: [(Text, (StdGen -> Ai))]
 ais =
-  [ ("a Random", Ai.random),
-    --("b Minimax 2", Ai.minimax 2),
-    --("c Minimax 3", Ai.minimax 3),
-    ("d AlphaBeta 1", Ai.alphaBeta 1)
-    --("e AlphaBeta 3", Ai.alphaBeta 3)
+  [ ("a Random", random),
+    ("b Minimax 1", minimax 1),
+    --("c AlphaBeta 1", alphaBeta 1),
+    ("d Minimax 2", minimax 2),
+    --("e AlphaBeta 2", alphaBeta 2),
+    ("f AlphaBeta 1", minimax 3)
+    --("g AlphaBeta 3", alphaBeta 3)
   ]
 
 -- | Run multiple AIs against each other.
-playOften :: (Player -> StdGen -> Ai) -> ([Double], [Int])
+playOften :: (Player -> StdGen -> Ai) -> ([Float], [Int])
 playOften ais =
   [1]
     |> parMap rpar (\i -> play (mkStdGen i) ais [] (initial breakthru))
@@ -84,11 +88,10 @@ playOften ais =
 
 -- | Play a game to the end. Takes a random number generator, a specification of a (possibly random-number-generator dependent) AI for each player, the history of states, and the current states. Returns the utility of player Gold and the history of states.
 play :: StdGen -> (Player -> StdGen -> Ai) -> [State] -> State -> (Utility, [State])
-play g ai history state@State {player = (player, _)} =
+play g ai history state@State {player} =
   let Game {result, utility} = breakthru
    in case utility state of
-        Just f ->
-          (f Gold, reverse history)
+        Just u -> (u, reverse history)
         Nothing ->
           let (g1, g2) = split g
            in play

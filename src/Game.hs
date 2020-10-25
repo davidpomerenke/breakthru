@@ -1,18 +1,15 @@
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
 module Game where
 
-import Data.Aeson
-import Data.Maybe
-import Flow
-import GHC.Generics
-
-{- TODO
-- only one ship → only one move
-- blocking situation = no actions → draw
--}
+import Data.Aeson (FromJSON, ToJSON)
+import Data.Hashable (Hashable)
+import Data.Maybe (catMaybes, fromMaybe)
+import Flow ((|>))
+import GHC.Generics (Generic)
 
 -- | Performs an action given a state.
 move :: State -> Action -> State
@@ -22,32 +19,33 @@ move state action =
 
 -- GAME & BREAKTHRU TYPES
 
--- | Formal type containing any game.
+-- | Formal type containing any zero-sum game.
 data Game state action player = Game
   { initial :: state,
     actions :: state -> [action],
     result :: state -> action -> Maybe state,
-    utility :: state -> Maybe (player -> Utility)
+    utility :: state -> Maybe Utility
   }
 
 -- | Type for the breakthru game state.
 data State = State
   { lastPlayer :: Maybe Player,
-    player :: (Player, Maybe Coordinate {- of first move -}),
+    player :: Player,
+    movedPiece :: Maybe Coordinate,
     gold :: (Maybe Coordinate, [Coordinate]),
     silver :: [Coordinate]
   }
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, Hashable)
 
 -- | Breakthru player.
 data Player
   = Gold
   | Silver
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, Hashable)
 
 -- | Position of a ship.
 data Coordinate = Coordinate {x :: Int, y :: Int}
-  deriving (Eq, Show, Generic)
+  deriving (Eq, Show, Generic, Hashable)
 
 -- | All ship coordinates of a player.
 type Fleet = [Coordinate]
@@ -56,7 +54,7 @@ type Fleet = [Coordinate]
 type Action = (Coordinate, Coordinate)
 
 -- | Utility of a player.
-data Utility = Utility Double
+data Utility = Utility Float
   deriving (Eq, Show, Generic, Ord)
 
 -- BREAKTHRU SPECIFICATION
@@ -71,185 +69,149 @@ breakthru =
       utility = utility_
     }
 
--- todo
+-- | Initial state.
 initial_ :: State
 initial_ =
   State
     { lastPlayer = Nothing,
-      player = (Gold, Nothing),
+      player = Gold,
+      movedPiece = Nothing,
       gold =
         ( Just Coordinate {x = 5, y = 5},
-          [ (3, 4),
-            (3, 5),
-            (3, 6),
-            (7, 4),
-            (7, 5),
-            (7, 6),
-            (4, 3),
-            (5, 3),
-            (6, 3),
-            (4, 7),
-            (5, 7),
-            (6, 7)
-          ]
+          [(3, 4), (3, 5), (3, 6), (7, 4), (7, 5), (7, 6), (4, 3), (5, 3), (6, 3), (4, 7), (5, 7), (6, 7)]
             |> map (\(x, y) -> Coordinate {x, y})
         ),
       silver =
-        [ (1, 3),
-          (1, 4),
-          (1, 5),
-          (1, 6),
-          (1, 7),
-          (9, 3),
-          (9, 4),
-          (9, 5),
-          (9, 6),
-          (9, 7),
-          (3, 1),
-          (4, 1),
-          (5, 1),
-          (6, 1),
-          (7, 1),
-          (3, 9),
-          (4, 9),
-          (5, 9),
-          (6, 9),
-          (7, 9)
-        ]
+        [(1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (9, 3), (9, 4), (9, 5), (9, 6), (9, 7), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (3, 9), (4, 9), (5, 9), (6, 9), (7, 9)]
           |> map (\(x, y) -> Coordinate {x, y})
     }
 
+-- | Avilable actions given a state. 
 actions_ :: State -> [Action]
-actions_ (state@State {player = (player, _)}) =
+actions_ (state@State {player}) =
   case utility_ state of
     Nothing ->
       fleetOfPlayer player state
-        |> concatMap
-          ( \pos ->
-              moves pos state
-                |> map (\move -> (pos, move))
-          )
-    Just _ ->
-      []
+        |> concatMap (\pos -> moves state pos |> map (\move -> (pos, move)))
+    Just _ -> []
 
 -- | Moves from a specific origin given a game state.
-moves :: Coordinate -> State -> [Coordinate]
-moves (start@Coordinate {x, y}) state@State {player = (player, frozen), lastPlayer, gold = (flagship, _)} =
-  if (flagship /= Just start || lastPlayer /= Just player) && Just start /= frozen
-    then
-      ( if lastPlayer /= Just player
-          then -- capturing moves
+moves :: State -> Coordinate -> [Coordinate]
+moves state@State {player, movedPiece, lastPlayer, gold = (flagship, _)} (start@Coordinate {x, y}) =
+  if
+      | (flagship /= Just start || lastPlayer /= Just player) && Just start /= movedPiece ->
+        (nonCapturingMoves x y |> concatMap (takeWhile (`notElem` (occupied state))))
+          ++ if lastPlayer /= Just player
+            then capturingMoves x y |> filter (\end -> end `elem` fleetOfPlayer (other player) state)
+            else []
+      | otherwise -> []
 
-            [ Coordinate {x = x -1, y = y -1},
-              Coordinate {x = x -1, y = y + 1},
-              Coordinate {x = x + 1, y = y -1},
-              Coordinate {x = x + 1, y = y + 1}
-            ]
-              |> filter (\end -> end `elem` fleetOfPlayer (other player) state)
-          else []
-      ) -- noncapturing moves
-        ++ ( [ (([(x + 1), (x + 2) .. 10] |> map (\x -> Coordinate {x, y}))),
-               (([(x - 1), (x - 2) .. 0] |> map (\x -> Coordinate {x, y}))),
-               (([(y + 1), (y + 2) .. 10] |> map (\y -> Coordinate {x, y}))),
-               (([(y - 1), (y - 2) .. 0] |> map (\y -> Coordinate {x, y})))
-             ]
-               |> concatMap (takeWhile (`notElem` (occupied state)))
-           )
-    else []
+-- | Capturing moves potentially available from a coordinate. (The diagonal neighbours.)
+capturingMoves x y =
+  [ Coordinate {x = x -1, y = y -1},
+    Coordinate {x = x -1, y = y + 1},
+    Coordinate {x = x + 1, y = y -1},
+    Coordinate {x = x + 1, y = y + 1}
+  ]
 
+-- | Non-capturing moves potentially available from a coordinate. (The fields in the same line of each direction, until there is an obstacle.)
+nonCapturingMoves x y =
+  [ (([(x + 1), (x + 2) .. 10] |> map (\x -> Coordinate {x, y}))),
+    (([(x - 1), (x - 2) .. 0] |> map (\x -> Coordinate {x, y}))),
+    (([(y + 1), (y + 2) .. 10] |> map (\y -> Coordinate {x, y}))),
+    (([(y - 1), (y - 2) .. 0] |> map (\y -> Coordinate {x, y})))
+  ]
+
+-- | New state after an action.
 result_ :: State -> Action -> Maybe State
 result_
-  state@State {player = (player, _), lastPlayer, gold = (flagship, rest), silver}
-  ( origin@Coordinate {x = x1, y = y1},
-    end@Coordinate {x = x2, y = y2}
-    ) =
-    if origin `elem` fleetOfPlayer player state
-      then
-        if
-            | (x1 == x2 || y1 == y2)
-                && end `notElem` (occupied state)
-                && (flagship /= Just origin || lastPlayer /= Just player) ->
-              -- noncapturing
-              Just
-                State
-                  { lastPlayer = Just player,
-                    player =
-                      if lastPlayer == Just player
-                        || flagship == Just origin
-                        || length (fleetOfPlayer player state)
-                          <= case player of
-                            Gold -> 2
-                            Silver -> 1
-                        then (other player, Nothing)
-                        else (player, Just end),
-                    gold =
-                      case player of
-                        Gold ->
-                          if flagship == Just origin
-                            then (Just end, rest)
-                            else
-                              ( flagship,
-                                end : (filter ((/=) origin) rest)
-                              )
-                        Silver -> (flagship, rest),
-                    silver = case player of
-                      Gold ->
-                        silver
-                      Silver -> end : (filter ((/=) origin) silver)
-                  }
-            | lastPlayer /= Just player
-                && abs ((x2 - x1) * (y2 - y1)) == 1
-                && end `elem` (fleetOfPlayer (other player) state) ->
-              -- capturing
+  state@State {player, lastPlayer, gold = (flagship, _)}
+  action@( origin@Coordinate {x = x1, y = y1},
+           end@Coordinate {x = x2, y = y2}
+           )
+    | origin `elem` fleetOfPlayer player state =
+      if
+          | (x1 == x2 || y1 == y2)
+              && end `notElem` (occupied state)
+              && (flagship /= Just origin || lastPlayer /= Just player) ->
+            nonCapturingResult state action
+          | lastPlayer /= Just player
+              && abs ((x2 - x1) * (y2 - y1)) == 1
+              && end `elem` (fleetOfPlayer (other player) state) ->
+            capturingResult state action
+          | otherwise ->
+            Nothing -- invalid end position
+    | otherwise = Nothing -- no own ship on start position
 
-              Just
-                State
-                  { lastPlayer = Just player,
-                    player = (other player, Nothing),
-                    gold =
-                      case player of
-                        Gold ->
-                          if flagship == Just origin
-                            then (Just end, rest)
-                            else
-                              ( flagship,
-                                end : (filter ((/=) origin) rest)
-                              )
-                        Silver ->
-                          ( if flagship == Just end then Nothing else flagship,
-                            filter ((/=) end) rest
-                          ),
-                    silver =
-                      case player of
-                        Gold -> filter ((/=) end) silver
-                        Silver -> end : (filter ((/=) origin) silver)
-                  }
-            | otherwise ->
-              Nothing -- invalid end position
-      else -- no own ship on start position
-        Nothing
+-- | New state after an action if the action is a capture.
+nonCapturingResult :: State -> Action -> Maybe State
+nonCapturingResult
+  state@State {player, lastPlayer, gold = (flagship, rest), silver}
+  (origin, end) =
+    let switchPlayers =
+          lastPlayer == Just player
+            || flagship == Just origin
+            || length (fleetOfPlayer player state)
+              <= case player of
+                Gold -> 2
+                Silver -> 1
+     in Just
+          State
+            { lastPlayer = Just player,
+              player =
+                if switchPlayers
+                  then other player
+                  else player,
+              movedPiece =
+                if switchPlayers
+                  then Nothing
+                  else Just end,
+              gold =
+                case player of
+                  Gold
+                    | flagship == Just origin -> (Just end, rest)
+                    | otherwise -> (flagship, end : (filter ((/=) origin) rest))
+                  Silver -> (flagship, rest),
+              silver = case player of
+                Gold -> silver
+                Silver -> end : (filter ((/=) origin) silver)
+            }
 
-utility_ :: State -> Maybe (Player -> Utility)
+-- | New state after an action if the action is not a capture.
+capturingResult :: State -> Action -> Maybe State
+capturingResult
+  State {player, gold = (flagship, rest), silver}
+  (origin, end) =
+    Just
+      State
+        { lastPlayer = Just player,
+          player = other player,
+          movedPiece = Nothing,
+          gold =
+            case player of
+              Gold
+                | flagship == Just origin -> (Just end, rest)
+                | otherwise -> (flagship, end : (filter ((/=) origin) rest))
+              Silver ->
+                ( if flagship == Just end then Nothing else flagship,
+                  filter ((/=) end) rest
+                ),
+          silver =
+            case player of
+              Gold -> filter ((/=) end) silver
+              Silver -> end : (filter ((/=) origin) silver)
+        }
+
+-- | Utility of a terminal state, in terms of player Gold. `Nothing` if the state is not terminal.
+utility_ :: State -> Maybe Utility
 utility_ = \state@State {gold = (flagship, _)} ->
   case flagship of
-    Nothing ->
-      Just
-        ( \player -> case player of
-            Gold -> Utility (-1)
-            Silver -> Utility 1
-        )
-    Just Coordinate {x, y} ->
-      if x == 0 || x == 10 || y == 0 || y == 10
-        || length (fleetOfPlayer Silver state) == 0
-        then
-          Just
-            ( \player -> case player of
-                Gold -> Utility 1
-                Silver -> Utility (-1)
-            )
-        else Nothing
+    Nothing -> Just (Utility (-1))
+    Just Coordinate {x, y}
+      | x == 0 || x == 10 || y == 0 || y == 10 || length (fleetOfPlayer Silver state) == 0 -> Just (Utility 1)
+      | otherwise -> Nothing
 
--- HELPERS
+-- HELPERS FOR GAME DEFINITION
 
 -- | Returns the other player.
 other :: Player -> Player
@@ -260,15 +222,10 @@ other p = case p of
 -- | Fleet of a player given a game state.
 fleetOfPlayer :: Player -> State -> Fleet
 fleetOfPlayer player (State {gold = (flagship, rest), silver}) =
-  case player of
-    Gold ->
-      case flagship of
-        Just a ->
-          a : rest
-        Nothing ->
-          rest
-    Silver ->
-      silver
+  case (player, flagship) of
+    (Gold, Just a) -> a : rest
+    (Gold, Nothing) -> rest
+    (Silver, _) -> silver
 
 occupied :: State -> [Coordinate]
 occupied state = (fleetOfPlayer Gold state) ++ (fleetOfPlayer Silver state)

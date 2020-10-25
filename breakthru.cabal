@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 434de4511e4b5d7c67206c9bcb268606f5b905102b1a9d425a192fd1f8437132
+-- hash: 68a216fd5059236d22492103d385f018b5f672c53224b8662f329dbc1451a63f
 
 name:           breakthru
 version:        0.1.0.0
@@ -27,8 +27,10 @@ source-repository head
 
 library
   exposed-modules:
-      Ai
+      AlphaBeta
       Game
+      Helpers
+      Minimax
   other-modules:
       Paths_breakthru
   hs-source-dirs:
@@ -40,6 +42,7 @@ library
     , cassava
     , containers
     , flow
+    , hashable
     , http-types
     , listsafe
     , open-browser
@@ -48,6 +51,7 @@ library
     , random >=1.1 && <2
     , statistics
     , text
+    , unordered-containers
     , vector
     , wai
     , warp
@@ -69,6 +73,7 @@ executable breakthru-exe
     , cassava
     , containers
     , flow
+    , hashable
     , http-types
     , listsafe
     , open-browser
@@ -77,6 +82,7 @@ executable breakthru-exe
     , random >=1.1 && <2
     , statistics
     , text
+    , unordered-containers
     , vector
     , wai
     , warp
@@ -98,6 +104,7 @@ test-suite breakthru-test
     , cassava
     , containers
     , flow
+    , hashable
     , http-types
     , listsafe
     , open-browser
@@ -106,6 +113,7 @@ test-suite breakthru-test
     , random >=1.1 && <2
     , statistics
     , text
+    , unordered-containers
     , vector
     , wai
     , warp
