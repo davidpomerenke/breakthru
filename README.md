@@ -1,16 +1,6 @@
 # breakthru
 
-Game engine with AI. University project for Mark Winands, Intelligent Search & Games, 2020/21.
-
-## Rules
-
-![Official rules](static/assets/offical_rules.jpg)
-
-Also see [Wikipedia](https://en.wikipedia.org/wiki/Breakthrough_(board_game)).
-
-## Install
-
-See [releases](https://github.com/davidpomerenke/breakthru/releases/tag/v1.0.0).
+Game engine with AI for [Breakthru](https://en.wikipedia.org/wiki/Breakthrough_(board_game)). University project for Mark Winands, Intelligent Search & Games, 2020/21.
 
 ## Build from source & run (all platforms)
 
@@ -20,7 +10,7 @@ See [releases](https://github.com/davidpomerenke/breakthru/releases/tag/v1.0.0).
 
 ## Other projects from the course:
 
-- [DavidSchimmel/BreakThruAI]https://github.com/DavidSchimmel/BreakThruAI
+- [DavidSchimmel/BreakThruAI](https://github.com/DavidSchimmel/BreakThruAI)
 - [ZKeal/BBoardGame](https://github.com/zkeal/BBoardGame)
 
 ## See also

@@ -3,5 +3,5 @@
 *.eventlog
 node_modules/
 todo
-*.exe
+*exe
 *.mp4
