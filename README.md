@@ -17,3 +17,15 @@ Game engine with AI for [Breakthru](https://en.wikipedia.org/wiki/Breakthrough_(
 
 - [davidpomerenke/checkers](https://github.com/davidpomerenke/checkers), a similar project for the Checkers game, made with [aima.js](https://github.com/davidpomerenke/aima.js) and React
 - [davidpomerenke/elm-problem-solving](ttps://github.com/davidpomerenke/elm-problem-solving), visualizations for search algorithms (forthcoming)
+
+## Presentation
+
+![](presentation/presentation-0.png)
+![](presentation/presentation-2.png)
+![](presentation/presentation-3.png)
+![](presentation/presentation-4.png)
+![](presentation/presentation-5.png)
+![](presentation/presentation-6.png)
+![](presentation/presentation-7.png)
+![](presentation/presentation-8.png)
+![](presentation/presentation-9.png)
